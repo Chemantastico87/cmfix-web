@@ -58,17 +58,17 @@ export const ContactPage: React.FC = () => {
               <div className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 text-brand-green shrink-0 mt-1" />
                 <div>
-                  <p className="text-white font-semibold">Dirección</p>
-                  <p className="text-slate-400 mt-0.5">Calle Tecnología 14, Local 2, 28030 Madrid</p>
-                  <span className="text-[11px] text-brand-green">Zona de fácil aparcamiento y metro cercano</span>
+                  <p className="text-white font-semibold">Ubicación y Cobertura</p>
+                  <p className="text-slate-400 mt-0.5">La Línea de la Concepción y alrededores (Cádiz)</p>
+                  <span className="text-[11px] text-brand-green">Servicio técnico express y recogidas locales</span>
                 </div>
               </div>
 
               <div className="flex items-start gap-3">
                 <Clock className="w-4 h-4 text-brand-green shrink-0 mt-1" />
                 <div>
-                  <p className="text-white font-semibold">Horario de Taller</p>
-                  <p className="text-slate-400 mt-0.5">Lunes a Viernes: 09:30 - 14:00 y 16:30 - 20:00</p>
+                  <p className="text-white font-semibold">Horario de Atención</p>
+                  <p className="text-slate-400 mt-0.5">Lunes a Viernes: 09:30 - 14:00 y 16:30 - 20:30</p>
                   <p className="text-slate-400">Sábados: 10:00 - 14:00</p>
                 </div>
               </div>
@@ -76,9 +76,9 @@ export const ContactPage: React.FC = () => {
               <div className="flex items-start gap-3">
                 <Phone className="w-4 h-4 text-brand-green shrink-0 mt-1" />
                 <div>
-                  <p className="text-white font-semibold">Teléfono y WhatsApp</p>
-                  <a href="tel:+34624892041" className="text-slate-300 hover:text-brand-green block">+34 624 89 20 41</a>
-                  <p className="text-[11px] text-slate-500">Respondemos mensajes en horario comercial</p>
+                  <p className="text-white font-semibold">Teléfono / WhatsApp (Maury)</p>
+                  <a href="tel:+34661991060" className="text-slate-300 hover:text-brand-green block">+34 661 99 10 60</a>
+                  <p className="text-[11px] text-slate-500">Atención rápida y presupuestos sin compromiso</p>
                 </div>
               </div>
 
@@ -86,7 +86,7 @@ export const ContactPage: React.FC = () => {
                 <Mail className="w-4 h-4 text-brand-green shrink-0 mt-1" />
                 <div>
                   <p className="text-white font-semibold">Correo Electrónico</p>
-                  <a href="mailto:info@cmfix.es" className="text-slate-300 hover:text-brand-green">info@cmfix.es</a>
+                  <a href="mailto:cmfixespana@gmail.com" className="text-slate-300 hover:text-brand-green">cmfixespana@gmail.com</a>
                 </div>
               </div>
             </div>
@@ -94,7 +94,7 @@ export const ContactPage: React.FC = () => {
             {/* Direct Action Buttons */}
             <div className="pt-4 border-t border-brand-border/60 flex flex-col sm:flex-row gap-3">
               <a
-                href="https://wa.me/34624892041"
+                href="https://wa.me/34661991060?text=Hola%20Maury,%20necesito%20informaci%C3%B3n%20sobre%20una%20reparaci%C3%B3n"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
@@ -104,7 +104,7 @@ export const ContactPage: React.FC = () => {
               </a>
 
               <a
-                href="tel:+34624892041"
+                href="tel:+34661991060"
                 className="py-3 px-4 rounded-xl bg-brand-surface border border-brand-border text-slate-200 hover:text-white font-bold text-xs flex items-center justify-center gap-2 transition-all"
               >
                 <Phone className="w-4 h-4 text-brand-green" />

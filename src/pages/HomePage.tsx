@@ -79,7 +79,7 @@ export const HomePage: React.FC = () => {
 
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-surface border border-brand-green/30 text-brand-green-light text-xs font-semibold mb-6">
             <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse" />
-            <span>Taller Técnico Especializado en Madrid — Presupuestos en 2 Minutos</span>
+            <span>Técnico Especializado en La Línea de la Concepción y alrededores — Presupuestos en 2 Minutos</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tight max-w-4xl mx-auto leading-tight md:leading-tight">

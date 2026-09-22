@@ -19,7 +19,7 @@ export const LegalNoticePage: React.FC = () => {
         <section className="space-y-3 text-xs leading-relaxed">
           <h2 className="text-sm font-bold text-white uppercase tracking-wider text-brand-green">1. Información General (LSSI-CE)</h2>
           <p>
-            En cumplimiento del artículo 10 de la Ley 34/2002 de Servicios de la Sociedad de la Información y de Comercio Electrónico (LSSI-CE), se informa que el titular del dominio cmfix.es es <strong>CM FIX</strong>, con CIF provisional B-12345678 y domicilio en Calle Tecnología 14, Local 2, 28030 Madrid. Teléfono de atención: +34 624 89 20 41. Correo electrónico: info@cmfix.es.
+            En cumplimiento del artículo 10 de la Ley 34/2002 de Servicios de la Sociedad de la Información y de Comercio Electrónico (LSSI-CE), se informa que el titular del servicio es <strong>CM FIX (Maury)</strong>, con domicilio en La Línea de la Concepción y alrededores (Cádiz). Teléfono de atención: +34 661 99 10 60. Correo electrónico: cmfixespana@gmail.com.
           </p>
         </section>
 

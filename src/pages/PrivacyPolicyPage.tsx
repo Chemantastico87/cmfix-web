@@ -21,7 +21,7 @@ export const PrivacyPolicyPage: React.FC = () => {
         <section className="space-y-3 text-xs leading-relaxed">
           <h2 className="text-sm font-bold text-white uppercase tracking-wider text-brand-green">1. Responsable del Tratamiento</h2>
           <p>
-            El responsable del tratamiento de los datos recabados en este sitio web es <strong>CM FIX</strong>, con CIF provisional B-12345678 y domicilio social en Calle Tecnología 14, Local 2, 28030 Madrid. Correo de contacto: info@cmfix.es.
+            El responsable del tratamiento de los datos recabados en este sitio web es <strong>CM FIX (Maury)</strong>, con domicilio en La Línea de la Concepción y alrededores (Cádiz). Teléfono de atención: +34 661 99 10 60. Correo de contacto: cmfixespana@gmail.com.
           </p>
         </section>
 

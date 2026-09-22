@@ -34,7 +34,7 @@ export const Footer: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-3">
             <a
-              href="https://wa.me/34624892041?text=Hola%20CM%20FIX,%20necesito%20informaci%C3%B3n%20sobre%20una%20reparaci%C3%B3n"
+              href="https://wa.me/34661991060?text=Hola%20Maury,%20necesito%20informaci%C3%B3n%20sobre%20una%20reparaci%C3%B3n"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-all shadow-sm active:scale-95"
@@ -43,7 +43,7 @@ export const Footer: React.FC = () => {
               <span>WhatsApp Directo</span>
             </a>
             <a
-              href="tel:+34624892041"
+              href="tel:+34661991060"
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-surface border border-brand-border hover:border-brand-green/60 text-slate-200 font-semibold text-xs transition-all"
             >
               <Phone className="w-4 h-4 text-brand-green" />
@@ -142,19 +142,19 @@ export const Footer: React.FC = () => {
             <div className="space-y-2.5 text-xs">
               <div className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-brand-green shrink-0 mt-0.5" />
-                <span>Calle Tecnología 14, Local 2, 28030 Madrid</span>
+                <span>La Línea de la Concepción y alrededores (Cádiz)</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-brand-green shrink-0" />
-                <a href="tel:+34624892041" className="hover:text-white">+34 624 89 20 41</a>
+                <a href="tel:+34661991060" className="hover:text-white">+34 661 99 10 60 (Maury)</a>
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-brand-green shrink-0" />
-                <a href="mailto:info@cmfix.es" className="hover:text-white">info@cmfix.es</a>
+                <a href="mailto:cmfixespana@gmail.com" className="hover:text-white">cmfixespana@gmail.com</a>
               </div>
               <div className="flex items-start gap-2.5">
                 <Clock className="w-4 h-4 text-brand-green shrink-0 mt-0.5" />
-                <span>Lun - Vie: 09:30 - 14:00 | 16:30 - 20:00<br />Sábados: 10:00 - 14:00</span>
+                <span>Lun - Vie: 09:30 - 14:00 | 16:30 - 20:30<br />Sábados: 10:00 - 14:00</span>
               </div>
             </div>
           </div>

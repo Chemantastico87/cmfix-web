@@ -95,8 +95,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Local / Demo mode login
       const mockUser: AuthUser = {
         id: 'user-' + Date.now(),
-        email: email || 'admin@cmfix.es',
-        name: demoRole === 'ADMIN' ? 'Chema (Administrador)' : 'Técnico Taller CM FIX',
+        email: email || 'cmfixespana@gmail.com',
+        name: demoRole === 'ADMIN' ? 'Maury (Administrador)' : 'Maury (Técnico CM FIX)',
         role: demoRole
       };
       setUser(mockUser);
