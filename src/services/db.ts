@@ -227,13 +227,36 @@ export const dbService = {
 
   async createCustomer(data: Omit<Customer, 'id' | 'created_at'>): Promise<Customer> {
     const existing = (await this.getCustomers()).find(
-      c => c.phone.trim() === data.phone.trim() || c.email.toLowerCase().trim() === data.email.toLowerCase().trim()
+      c => (data.phone && c.phone && c.phone.trim().replace(/\s+/g, '') === data.phone.trim().replace(/\s+/g, '')) || 
+           (data.email && c.email && c.email.toLowerCase().trim() === data.email.toLowerCase().trim())
     );
     if (existing) {
       return existing;
     }
+
+    let customerId = 'cust-' + Date.now();
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data: dbCust, error: custErr } = await supabase.from('customers').insert([{
+          name: data.name,
+          phone: data.phone,
+          email: data.email,
+          address: data.address || null,
+          notes: data.notes || null
+        }]).select().single();
+
+        if (!custErr && dbCust?.id) {
+          customerId = dbCust.id;
+        } else if (custErr) {
+          console.warn('Supabase customer insert warning:', custErr);
+        }
+      } catch (err) {
+        console.warn('Error saving customer to Supabase:', err);
+      }
+    }
+
     const newCustomer: Customer = {
-      id: 'cust-' + Date.now(),
+      id: customerId,
       name: data.name,
       phone: data.phone,
       email: data.email,
@@ -243,9 +266,7 @@ export const dbService = {
       repairs_count: 0,
       total_spent: 0
     };
-    if (isSupabaseConfigured && supabase) {
-      await supabase.from('customers').insert([newCustomer]);
-    }
+
     const current = getLocal<Customer[]>(STORAGE_KEYS.CUSTOMERS, INITIAL_CUSTOMERS);
     setLocal(STORAGE_KEYS.CUSTOMERS, [newCustomer, ...current]);
     return newCustomer;
@@ -253,21 +274,141 @@ export const dbService = {
 
   // --- Quotes ---
   async getQuotes(): Promise<Quote[]> {
+    const localQuotes = getLocal<Quote[]>(STORAGE_KEYS.QUOTES, INITIAL_QUOTES);
+    const customers = await this.getCustomers();
+
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('quotes').select('*, customer:customers(*)').order('created_at', { ascending: false });
-      if (!error && data) return data as Quote[];
+      try {
+        const { data, error } = await supabase
+          .from('quotes')
+          .select('*, customer:customers(*)')
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          const dbMapped: Quote[] = data.map((d: any) => ({
+            id: d.id,
+            quote_number: d.quote_number,
+            customer_id: d.customer_id,
+            customer: d.customer || customers.find(c => c.id === d.customer_id),
+            device_category: d.device_category,
+            device_brand: d.brand || d.device_brand || 'Dispositivo',
+            device_model: d.model || d.device_model || '',
+            repair_type: d.issue_type || d.repair_type || 'Reparación',
+            issue_description: d.description || d.issue_description || '',
+            photos: [],
+            items: [
+              {
+                id: 'qi-' + d.id,
+                description: `${d.issue_type || 'Reparación'} para ${d.brand || ''} ${d.model || ''}`.trim(),
+                type: 'PART',
+                cost: (Number(d.subtotal) || 0) * 0.5,
+                price: Number(d.subtotal) || 0,
+                quantity: 1
+              }
+            ],
+            subtotal: Number(d.subtotal) || 0,
+            vat_rate: 21,
+            vat_amount: Number(d.tax || d.vat_amount) || 0,
+            total: Number(d.total) || 0,
+            is_orientative: true,
+            status: d.status || 'PENDIENTE',
+            estimated_time: '24-48 horas',
+            created_at: d.created_at || new Date().toISOString(),
+            valid_until: d.expires_at ? d.expires_at.split('T')[0] : new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0]
+          }));
+
+          // Merge Supabase quotes with local quotes (never lose local or remote quotes)
+          const map = new Map<string, Quote>();
+          dbMapped.forEach(q => {
+            map.set(q.id, q);
+            if (q.quote_number) map.set(q.quote_number.toUpperCase(), q);
+          });
+          localQuotes.forEach(q => {
+            const hasById = map.has(q.id);
+            const hasByNum = q.quote_number ? map.has(q.quote_number.toUpperCase()) : false;
+            if (!hasById && !hasByNum) {
+              map.set(q.id, {
+                ...q,
+                customer: customers.find(c => c.id === q.customer_id) || q.customer
+              });
+            }
+          });
+          const merged = Array.from(new Set(map.values()));
+          setLocal(STORAGE_KEYS.QUOTES, merged);
+          return merged;
+        }
+      } catch (err) {
+        console.warn('Error fetching quotes from Supabase:', err);
+      }
     }
-    const quotes = getLocal<Quote[]>(STORAGE_KEYS.QUOTES, INITIAL_QUOTES);
-    const customers = getLocal<Customer[]>(STORAGE_KEYS.CUSTOMERS, INITIAL_CUSTOMERS);
-    return quotes.map(q => ({
+
+    return localQuotes.map(q => ({
       ...q,
       customer: customers.find(c => c.id === q.customer_id) || q.customer
     }));
   },
 
   async getQuoteById(id: string): Promise<Quote | null> {
+    if (!id) return null;
+    const cleanId = id.trim().toLowerCase();
     const quotes = await this.getQuotes();
-    return quotes.find(q => q.id === id || q.quote_number.toLowerCase() === id.toLowerCase()) || null;
+    const found = quotes.find(q => 
+      q.id.toLowerCase() === cleanId || 
+      (q.quote_number && q.quote_number.toLowerCase() === cleanId)
+    );
+    if (found) return found;
+
+    // Direct fallback search in Supabase if not yet synced locally
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id.trim());
+        let query = supabase.from('quotes').select('*, customer:customers(*)');
+        if (isUuid) {
+          query = query.or(`id.eq.${id.trim()},quote_number.ilike.${id.trim()}`);
+        } else {
+          query = query.ilike('quote_number', id.trim());
+        }
+        const { data } = await query.maybeSingle();
+        if (data) {
+          const singleQuote: Quote = {
+            id: data.id,
+            quote_number: data.quote_number,
+            customer_id: data.customer_id,
+            customer: data.customer,
+            device_category: data.device_category,
+            device_brand: data.brand || 'Dispositivo',
+            device_model: data.model || '',
+            repair_type: data.issue_type || 'Reparación',
+            issue_description: data.description || '',
+            photos: [],
+            items: [
+              {
+                id: 'qi-' + data.id,
+                description: `${data.issue_type || 'Reparación'} para ${data.brand || ''} ${data.model || ''}`.trim(),
+                type: 'PART',
+                cost: (Number(data.subtotal) || 0) * 0.5,
+                price: Number(data.subtotal) || 0,
+                quantity: 1
+              }
+            ],
+            subtotal: Number(data.subtotal) || 0,
+            vat_rate: 21,
+            vat_amount: Number(data.tax) || 0,
+            total: Number(data.total) || 0,
+            is_orientative: true,
+            status: data.status || 'PENDIENTE',
+            estimated_time: '24-48 horas',
+            created_at: data.created_at,
+            valid_until: data.expires_at ? data.expires_at.split('T')[0] : ''
+          };
+          return singleQuote;
+        }
+      } catch (err) {
+        console.warn('Direct quote query error:', err);
+      }
+    }
+
+    return null;
   },
 
   async createQuote(data: {
@@ -298,9 +439,43 @@ export const dbService = {
     const vatAmount = (data.subtotal * data.vatRate) / 100;
     const total = data.subtotal + vatAmount;
 
+    let quoteId = 'quote-' + Date.now();
+    let finalQuoteNumber = quoteNumber;
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const isCustUUID = customer.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(customer.id);
+        const { data: dbQuote, error: qErr } = await supabase.from('quotes').insert([{
+          quote_number: quoteNumber,
+          customer_id: isCustUUID ? customer.id : null,
+          device_category: data.deviceCategory,
+          brand: data.deviceBrand,
+          model: data.deviceModel,
+          issue_type: data.repairType,
+          description: data.issueDescription,
+          subtotal: data.subtotal,
+          tax: vatAmount,
+          total: total,
+          status: 'PENDIENTE',
+          expires_at: new Date(Date.now() + 15 * 86400000).toISOString()
+        }]).select().single();
+
+        if (!qErr && dbQuote) {
+          quoteId = dbQuote.id;
+          if (dbQuote.quote_number) {
+            finalQuoteNumber = dbQuote.quote_number;
+          }
+        } else if (qErr) {
+          console.warn('Supabase quote insert error:', qErr);
+        }
+      } catch (err) {
+        console.warn('Error saving quote to Supabase:', err);
+      }
+    }
+
     const newQuote: Quote = {
-      id: 'quote-' + Date.now(),
-      quote_number: quoteNumber,
+      id: quoteId,
+      quote_number: finalQuoteNumber,
       customer_id: customer.id,
       customer,
       device_category: data.deviceCategory,
@@ -327,12 +502,8 @@ export const dbService = {
       status: 'PENDIENTE',
       estimated_time: data.estimatedTime,
       created_at: new Date().toISOString(),
-      valid_until: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      valid_until: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0]
     };
-
-    if (isSupabaseConfigured && supabase) {
-      await supabase.from('quotes').insert([newQuote]);
-    }
 
     const current = getLocal<Quote[]>(STORAGE_KEYS.QUOTES, INITIAL_QUOTES);
     setLocal(STORAGE_KEYS.QUOTES, [newQuote, ...current]);
@@ -341,16 +512,15 @@ export const dbService = {
 
   async updateQuoteStatus(id: string, status: QuoteStatus): Promise<Quote | null> {
     const quotes = await this.getQuotes();
-    const index = quotes.findIndex(q => q.id === id || q.quote_number === id);
+    const index = quotes.findIndex(q => q.id === id || (q.quote_number && q.quote_number.toLowerCase() === id.toLowerCase()));
     if (index === -1) return null;
 
     const quote = quotes[index];
     quote.status = status;
     if (status === 'ACEPTADO') {
       quote.accepted_at = new Date().toISOString();
-      // Automatización: Al aceptar el presupuesto, crear la orden de reparación automáticamente si no existe!
       const repairs = await this.getRepairs();
-      const existingRepair = repairs.find(r => r.quote_id === quote.id);
+      const existingRepair = repairs.find(r => r.quote_id === quote.id || r.repair_number === quote.quote_number);
       if (!existingRepair) {
         await this.createRepairFromQuote(quote);
       }
@@ -362,11 +532,22 @@ export const dbService = {
     setLocal(STORAGE_KEYS.QUOTES, quotes);
 
     if (isSupabaseConfigured && supabase) {
-      await supabase.from('quotes').update({
-        status,
-        accepted_at: quote.accepted_at,
-        rejected_at: quote.rejected_at
-      }).eq('id', quote.id);
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(quote.id);
+        if (isUuid) {
+          await supabase.from('quotes').update({
+            status,
+            is_converted_to_repair: status === 'ACEPTADO'
+          }).eq('id', quote.id);
+        } else if (quote.quote_number) {
+          await supabase.from('quotes').update({
+            status,
+            is_converted_to_repair: status === 'ACEPTADO'
+          }).eq('quote_number', quote.quote_number);
+        }
+      } catch (err) {
+        console.warn('Supabase quote update status error:', err);
+      }
     }
 
     return quote;
@@ -374,21 +555,140 @@ export const dbService = {
 
   // --- Repairs ---
   async getRepairs(): Promise<Repair[]> {
+    const localRepairs = getLocal<Repair[]>(STORAGE_KEYS.REPAIRS, INITIAL_REPAIRS);
+    const customers = await this.getCustomers();
+
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('repairs').select('*, customer:customers(*)').order('entry_date', { ascending: false });
-      if (!error && data) return data as Repair[];
+      try {
+        const { data, error } = await supabase
+          .from('repairs')
+          .select('*, customer:customers(*)')
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          const dbMapped: Repair[] = data.map((d: any) => ({
+            id: d.id,
+            repair_number: d.repair_number || d.tracking_code,
+            quote_id: d.quote_id,
+            customer_id: d.customer_id,
+            customer: d.customer || customers.find(c => c.id === d.customer_id),
+            device_category: d.device_category,
+            device_brand: d.brand || 'Dispositivo',
+            device_model: d.model || '',
+            serial_imei: d.serial_imei,
+            issue_description: d.initial_issue || 'Reparación en taller',
+            diagnosis: d.internal_notes || '',
+            work_performed: d.public_notes || '',
+            cost_total: Number(d.parts_cost || 0) + Number(d.labor_cost || 0),
+            price_total: Number(d.total_cost || 0),
+            profit: Math.max(0, Number(d.total_cost || 0) - (Number(d.parts_cost || 0) + Number(d.labor_cost || 0))),
+            status: d.status || 'RECIBIDO',
+            entry_date: d.received_at || d.created_at || new Date().toISOString(),
+            estimated_date: d.completed_at,
+            completion_date: d.delivered_at || (d.status === 'ENTREGADO' ? d.updated_at : undefined),
+            notes_internal: d.internal_notes,
+            notes_public: d.public_notes,
+            photos: [],
+            status_history: [
+              {
+                id: 'sh-init-' + d.id,
+                repair_id: d.id,
+                status: d.status || 'RECIBIDO',
+                notes: d.public_notes || 'Estado registrado en sistema',
+                created_at: d.created_at || new Date().toISOString()
+              }
+            ]
+          }));
+
+          const map = new Map<string, Repair>();
+          dbMapped.forEach(r => {
+            map.set(r.id, r);
+            if (r.repair_number) map.set(r.repair_number.toUpperCase(), r);
+          });
+          localRepairs.forEach(r => {
+            const hasById = map.has(r.id);
+            const hasByNum = r.repair_number ? map.has(r.repair_number.toUpperCase()) : false;
+            if (!hasById && !hasByNum) {
+              map.set(r.id, {
+                ...r,
+                customer: customers.find(c => c.id === r.customer_id) || r.customer
+              });
+            }
+          });
+          const merged = Array.from(new Set(map.values()));
+          setLocal(STORAGE_KEYS.REPAIRS, merged);
+          return merged;
+        }
+      } catch (err) {
+        console.warn('Error fetching repairs from Supabase:', err);
+      }
     }
-    const repairs = getLocal<Repair[]>(STORAGE_KEYS.REPAIRS, INITIAL_REPAIRS);
-    const customers = getLocal<Customer[]>(STORAGE_KEYS.CUSTOMERS, INITIAL_CUSTOMERS);
-    return repairs.map(r => ({
+
+    return localRepairs.map(r => ({
       ...r,
       customer: customers.find(c => c.id === r.customer_id) || r.customer
     }));
   },
 
   async getRepairById(id: string): Promise<Repair | null> {
+    if (!id) return null;
+    const cleanId = id.trim().toLowerCase();
     const repairs = await this.getRepairs();
-    return repairs.find(r => r.id === id || r.repair_number.toLowerCase() === id.toLowerCase()) || null;
+    const found = repairs.find(r => r.id.toLowerCase() === cleanId || r.repair_number.toLowerCase() === cleanId);
+    if (found) return found;
+
+    // Fallback: search in Supabase directly
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id.trim());
+        let query = supabase.from('repairs').select('*, customer:customers(*)');
+        if (isUuid) {
+          query = query.or(`id.eq.${id.trim()},repair_number.ilike.${id.trim()},tracking_code.ilike.${id.trim()}`);
+        } else {
+          query = query.or(`repair_number.ilike.${id.trim()},tracking_code.ilike.${id.trim()}`);
+        }
+        const { data } = await query.maybeSingle();
+        if (data) {
+          const mapped: Repair = {
+            id: data.id,
+            repair_number: data.repair_number || data.tracking_code,
+            quote_id: data.quote_id,
+            customer_id: data.customer_id,
+            customer: data.customer,
+            device_category: data.device_category,
+            device_brand: data.brand || 'Dispositivo',
+            device_model: data.model || '',
+            serial_imei: data.serial_imei,
+            issue_description: data.initial_issue || 'Reparación en taller',
+            diagnosis: data.internal_notes || '',
+            work_performed: data.public_notes || '',
+            cost_total: Number(data.parts_cost || 0) + Number(data.labor_cost || 0),
+            price_total: Number(data.total_cost || 0),
+            profit: Math.max(0, Number(data.total_cost || 0) - (Number(data.parts_cost || 0) + Number(data.labor_cost || 0))),
+            status: data.status || 'RECIBIDO',
+            entry_date: data.received_at || data.created_at || new Date().toISOString(),
+            estimated_date: data.completed_at,
+            notes_internal: data.internal_notes,
+            notes_public: data.public_notes,
+            photos: [],
+            status_history: [
+              {
+                id: 'sh-init-' + data.id,
+                repair_id: data.id,
+                status: data.status || 'RECIBIDO',
+                notes: data.public_notes || 'Estado registrado',
+                created_at: data.created_at || new Date().toISOString()
+              }
+            ]
+          };
+          return mapped;
+        }
+      } catch (err) {
+        console.warn('Direct repair lookup error:', err);
+      }
+    }
+
+    return null;
   },
 
   async getRepairByTracking(repairNumber: string, contactQuery: string): Promise<Repair | null> {
@@ -405,8 +705,40 @@ export const dbService = {
   },
 
   async createRepairFromQuote(quote: Quote): Promise<Repair> {
+    let repairId = 'rep-' + Date.now();
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const isQuoteUuid = quote.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(quote.id);
+        const isCustUuid = quote.customer_id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(quote.customer_id);
+
+        const { data: dbRep, error: repErr } = await supabase.from('repairs').insert([{
+          repair_number: quote.quote_number,
+          tracking_code: quote.quote_number,
+          quote_id: isQuoteUuid ? quote.id : null,
+          customer_id: isCustUuid ? quote.customer_id : null,
+          device_category: quote.device_category,
+          brand: quote.device_brand,
+          model: quote.device_model,
+          initial_issue: quote.issue_description || quote.repair_type,
+          status: 'APROBADO',
+          parts_cost: quote.subtotal * 0.5,
+          total_cost: quote.subtotal,
+          public_notes: 'Presupuesto aprobado por cliente.'
+        }]).select().single();
+
+        if (!repErr && dbRep?.id) {
+          repairId = dbRep.id;
+        } else if (repErr) {
+          console.warn('Supabase repair insert warning:', repErr);
+        }
+      } catch (err) {
+        console.warn('Error saving repair to Supabase:', err);
+      }
+    }
+
     const newRepair: Repair = {
-      id: 'rep-' + Date.now(),
+      id: repairId,
       repair_number: quote.quote_number, // Maintain same recognizable CMF code
       quote_id: quote.id,
       customer_id: quote.customer_id,
@@ -427,21 +759,21 @@ export const dbService = {
       status_history: [
         {
           id: 'sh-1',
-          repair_id: 'rep-' + Date.now(),
+          repair_id: repairId,
           status: 'RECIBIDO',
           notes: 'Solicitud iniciada online.',
           created_at: quote.created_at
         },
         {
           id: 'sh-2',
-          repair_id: 'rep-' + Date.now(),
+          repair_id: repairId,
           status: 'PRESUPUESTO',
           notes: `Presupuesto ${quote.quote_number} emitido.`,
           created_at: quote.created_at
         },
         {
           id: 'sh-3',
-          repair_id: 'rep-' + Date.now(),
+          repair_id: repairId,
           status: 'APROBADO',
           notes: 'Cliente ha aceptado el presupuesto online.',
           created_at: new Date().toISOString()
@@ -451,9 +783,6 @@ export const dbService = {
 
     const current = getLocal<Repair[]>(STORAGE_KEYS.REPAIRS, INITIAL_REPAIRS);
     setLocal(STORAGE_KEYS.REPAIRS, [newRepair, ...current]);
-    if (isSupabaseConfigured && supabase) {
-      await supabase.from('repairs').insert([newRepair]);
-    }
     return newRepair;
   },
 

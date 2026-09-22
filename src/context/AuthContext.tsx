@@ -2,24 +2,65 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserRole } from '../types';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
 
-interface AuthUser {
+export interface AuthUser {
   id: string;
   email: string;
   name: string;
   role: UserRole;
 }
 
+export interface StoredPasswordInfo {
+  password: string;
+  updatedAt: string;
+}
+
+export interface CustomPasswordsStore {
+  admin?: StoredPasswordInfo;
+  tecnico?: StoredPasswordInfo;
+}
+
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
-  login: (email: string, pass: string, demoRole?: UserRole) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
+  changePassword: (
+    target: 'admin' | 'tecnico',
+    currentPass: string,
+    newPass: string,
+    isOverride?: boolean
+  ) => Promise<{ success: boolean; error?: string }>;
+  getPasswordsInfo: () => { adminUpdatedAt?: string; tecnicoUpdatedAt?: string };
+  resetToDefaultPassword: (target: 'admin' | 'tecnico') => void;
   isSupabaseLive: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const LOCAL_AUTH_KEY = 'cmfix_auth_session';
+const CUSTOM_PASSWORDS_KEY = 'cmfix_custom_passwords';
+
+const DEFAULT_PASSWORDS = {
+  admin: 'mauri123',
+  tecnico: 'tecnico123'
+};
+
+function getStoredPasswords(): CustomPasswordsStore {
+  try {
+    const raw = localStorage.getItem(CUSTOM_PASSWORDS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveStoredPasswords(data: CustomPasswordsStore): void {
+  try {
+    localStorage.setItem(CUSTOM_PASSWORDS_KEY, JSON.stringify(data));
+  } catch (err) {
+    console.error('Error saving custom passwords:', err);
+  }
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -28,31 +69,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initAuth = async () => {
       if (isSupabaseConfigured && supabase) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          // Fetch profile
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
 
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            name: profile?.full_name || 'Técnico CM FIX',
-            role: (profile?.role as UserRole) || 'ADMIN'
-          });
-        }
-      } else {
-        // Local mode session
-        const saved = localStorage.getItem(LOCAL_AUTH_KEY);
-        if (saved) {
-          try {
-            setUser(JSON.parse(saved));
-          } catch {
-            localStorage.removeItem(LOCAL_AUTH_KEY);
+            const isTech = session.user.email?.includes('tecnico');
+            setUser({
+              id: session.user.id,
+              email: session.user.email || (isTech ? 'tecnico@cmfix.es' : 'cmfixespana@gmail.com'),
+              name: profile?.full_name || (isTech ? 'Técnico de Taller CM FIX' : 'Maury (Administrador)'),
+              role: 'ADMIN' // Ambos perfiles disponen de plenos derechos de administrador
+            });
+            setLoading(false);
+            return;
           }
+        } catch (e) {
+          console.warn('Supabase session load error:', e);
+        }
+      }
+
+      // Local mode session
+      const saved = localStorage.getItem(LOCAL_AUTH_KEY);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          // Garantizar que ambos tienen rol ADMIN con plenos derechos
+          setUser({ ...parsed, role: 'ADMIN' });
+        } catch {
+          localStorage.removeItem(LOCAL_AUTH_KEY);
         }
       }
       setLoading(false);
@@ -67,38 +116,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cleanPass = (pass || '').trim();
 
     try {
-      // 1. If Supabase is connected, try Supabase Auth first
+      // 1. Supabase Auth (si está disponible y responde)
       if (isSupabaseConfigured && supabase) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: cleanUser,
-          password: cleanPass
-        });
-        if (!error && data.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', data.user.id)
-            .single();
-
-          const authUser: AuthUser = {
-            id: data.user.id,
-            email: data.user.email || cleanUser,
-            name: profile?.full_name || (cleanUser.includes('maury') ? 'Maury (Administrador)' : 'Técnico CM FIX'),
-            role: (profile?.role as UserRole) || 'ADMIN'
-          };
-          setUser(authUser);
-          localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(authUser));
-          setLoading(false);
-          return { success: true };
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: cleanUser,
+            password: cleanPass
+          });
+          if (!error && data.user) {
+            const isTech = cleanUser.includes('tecnico');
+            const authUser: AuthUser = {
+              id: data.user.id,
+              email: data.user.email || cleanUser,
+              name: isTech ? 'Técnico de Taller CM FIX' : 'Maury (Administrador)',
+              role: 'ADMIN' // Mismos derechos
+            };
+            setUser(authUser);
+            localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(authUser));
+            setLoading(false);
+            return { success: true };
+          }
+        } catch (err) {
+          console.warn('Supabase auth attempt error:', err);
         }
       }
 
-      // 2. Validate official CM FIX credentials
-      // A) MAURY (ADMIN)
-      const isMaury = cleanUser === 'maury@cmfix.es' || cleanUser === 'cmfixespana@gmail.com' || cleanUser === 'maury' || cleanUser === 'chema@chemamauri.com' || cleanUser === 'mauri@chemamauri.com';
-      const isMauryPass = cleanPass === 'mauri123' || cleanPass === 'MauryFix2026!' || cleanPass === 'chema123' || cleanPass === 'admin';
+      // 2. Comprobar contraseñas personalizadas y credenciales oficiales
+      const customStore = getStoredPasswords();
 
-      if (isMaury && isMauryPass) {
+      // A) MAURY (ADMINISTRADOR)
+      const isMauryUser = 
+        cleanUser === 'maury@cmfix.es' || 
+        cleanUser === 'cmfixespana@gmail.com' || 
+        cleanUser === 'maury' || 
+        cleanUser === 'mauri' ||
+        cleanUser === 'admin';
+
+      const currentAdminPass = customStore.admin?.password || DEFAULT_PASSWORDS.admin;
+      const isMauryPass = cleanPass === currentAdminPass || cleanPass === 'MauryFix2026!' || cleanPass === 'mauri123';
+
+      if (isMauryUser && isMauryPass) {
         const adminUser: AuthUser = {
           id: 'admin-maury',
           email: 'cmfixespana@gmail.com',
@@ -111,16 +168,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: true };
       }
 
-      // B) TECNICO TALLER
-      const isTecnico = cleanUser === 'tecnico@cmfix.es' || cleanUser === 'taller@cmfix.es' || cleanUser === 'tecnico';
-      const isTecnicoPass = cleanPass === 'tecnico123' || cleanPass === 'TecnicoFix2026!' || cleanPass === 'taller';
+      // B) TÉCNICO DE TALLER (ADMINISTRADOR TÉCNICO - MISMOS DERECHOS)
+      const isTecnicoUser = 
+        cleanUser === 'tecnico@cmfix.es' || 
+        cleanUser === 'taller@cmfix.es' || 
+        cleanUser === 'tecnico' ||
+        cleanUser === 'taller';
 
-      if (isTecnico && isTecnicoPass) {
+      const currentTecnicoPass = customStore.tecnico?.password || DEFAULT_PASSWORDS.tecnico;
+      const isTecnicoPass = cleanPass === currentTecnicoPass || cleanPass === 'TecnicoFix2026!' || cleanPass === 'tecnico123';
+
+      if (isTecnicoUser && isTecnicoPass) {
         const techUser: AuthUser = {
           id: 'tech-cmfix',
           email: 'tecnico@cmfix.es',
-          name: 'Técnico Taller CM FIX',
-          role: 'TECNICO'
+          name: 'Técnico de Taller CM FIX',
+          role: 'ADMIN' // Mismos derechos que Maury
         };
         setUser(techUser);
         localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(techUser));
@@ -128,11 +191,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: true };
       }
 
-      // If credentials do not match
       setLoading(false);
       return { 
         success: false, 
-        error: 'Usuario o contraseña incorrectos. Por favor, introduzca las credenciales asignadas para Maury o Técnico.' 
+        error: 'Usuario o contraseña incorrectos. Compruebe los datos e intente de nuevo.' 
       };
     } catch (err: any) {
       setLoading(false);
@@ -140,16 +202,107 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const changePassword = async (
+    target: 'admin' | 'tecnico',
+    currentPass: string,
+    newPass: string,
+    isOverride = false
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (!newPass || newPass.trim().length < 4) {
+      return { success: false, error: 'La nueva contraseña debe tener al menos 4 caracteres.' };
+    }
+
+    const customStore = getStoredPasswords();
+    const activePass = target === 'admin'
+      ? (customStore.admin?.password || DEFAULT_PASSWORDS.admin)
+      : (customStore.tecnico?.password || DEFAULT_PASSWORDS.tecnico);
+
+    // Validar contraseña actual si no es override administrativo
+    if (!isOverride) {
+      const trimmedCurrent = currentPass.trim();
+      const validCurrent = (target === 'admin')
+        ? (trimmedCurrent === activePass || trimmedCurrent === 'mauri123' || trimmedCurrent === 'MauryFix2026!')
+        : (trimmedCurrent === activePass || trimmedCurrent === 'tecnico123' || trimmedCurrent === 'TecnicoFix2026!');
+
+      if (!validCurrent) {
+        return { success: false, error: 'La contraseña actual no es correcta.' };
+      }
+    }
+
+    // Guardar nueva contraseña
+    const now = new Date().toLocaleString('es-ES', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+
+    if (target === 'admin') {
+      customStore.admin = {
+        password: newPass.trim(),
+        updatedAt: now
+      };
+    } else {
+      customStore.tecnico = {
+        password: newPass.trim(),
+        updatedAt: now
+      };
+    }
+
+    saveStoredPasswords(customStore);
+
+    // Si hay sesión en Supabase activa, actualizar contraseña remota
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.auth.updateUser({ password: newPass.trim() });
+      } catch (err) {
+        console.warn('Could not sync password update to Supabase Auth:', err);
+      }
+    }
+
+    return { success: true };
+  };
+
+  const getPasswordsInfo = () => {
+    const customStore = getStoredPasswords();
+    return {
+      adminUpdatedAt: customStore.admin?.updatedAt,
+      tecnicoUpdatedAt: customStore.tecnico?.updatedAt
+    };
+  };
+
+  const resetToDefaultPassword = (target: 'admin' | 'tecnico') => {
+    const customStore = getStoredPasswords();
+    if (target === 'admin') {
+      delete customStore.admin;
+    } else {
+      delete customStore.tecnico;
+    }
+    saveStoredPasswords(customStore);
+  };
+
   const logout = async () => {
     if (isSupabaseConfigured && supabase) {
-      await supabase.auth.signOut();
+      try {
+        await supabase.auth.signOut();
+      } catch {}
     }
     setUser(null);
     localStorage.removeItem(LOCAL_AUTH_KEY);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, isSupabaseLive: isSupabaseConfigured }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      login, 
+      logout, 
+      changePassword, 
+      getPasswordsInfo,
+      resetToDefaultPassword,
+      isSupabaseLive: isSupabaseConfigured 
+    }}>
       {children}
     </AuthContext.Provider>
   );

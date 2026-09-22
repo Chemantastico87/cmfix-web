@@ -15,7 +15,8 @@ import {
   X, 
   Bell, 
   ShieldCheck,
-  Smartphone
+  Smartphone,
+  KeyRound
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -52,8 +53,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { label: 'Clientes', path: '/admin/clientes', icon: Users },
     { label: 'Inventario / Piezas', path: '/admin/inventario', icon: Package },
     { label: 'Proveedores', path: '/admin/proveedores', icon: Truck },
-    { label: 'Catálogo de Precios', path: '/admin/precios', icon: Tag, adminOnly: true },
-    { label: 'Configuración', path: '/admin/configuracion', icon: Settings, adminOnly: true },
+    { label: 'Catálogo de Precios', path: '/admin/precios', icon: Tag },
+    { label: 'Configuración', path: '/admin/configuracion', icon: Settings },
+    { label: 'Cambiar Contraseña', path: '/admin/seguridad', icon: KeyRound },
   ];
 
   const handleLogout = async () => {
@@ -73,7 +75,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             <img src="/cmfix-logo.png" alt="CM FIX" className="h-9 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
           </Link>
           <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-green/20 text-brand-green font-bold">
-            {user.role}
+            ADMIN
           </span>
         </div>
 
@@ -82,12 +84,18 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           <p className="text-xs text-slate-400">Sesión activa:</p>
           <p className="text-xs font-bold text-white truncate">{user.name}</p>
           <p className="text-[10px] text-slate-500 font-mono truncate">{user.email}</p>
+          <Link
+            to="/admin/seguridad"
+            className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-brand-green hover:underline"
+          >
+            <KeyRound className="w-3 h-3" />
+            <span>Cambiar contraseña</span>
+          </Link>
         </div>
 
         {/* Nav links */}
         <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
           {navItems.map((item) => {
-            if (item.adminOnly && user.role !== 'ADMIN') return null;
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return (
@@ -136,7 +144,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
         <div className="flex items-center gap-2">
           <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-green/20 text-brand-green font-bold">
-            {user.role}
+            ADMIN
           </span>
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -151,7 +159,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       {mobileOpen && (
         <div className="md:hidden bg-brand-carbon border-b border-brand-border px-4 py-4 space-y-2 z-40 animate-fadeIn">
           {navItems.map((item) => {
-            if (item.adminOnly && user.role !== 'ADMIN') return null;
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return (

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   Settings, 
   Save, 
@@ -7,7 +8,8 @@ import {
   Calculator, 
   MessageSquare, 
   ShieldCheck,
-  RefreshCw
+  RefreshCw,
+  KeyRound
 } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { dbService } from '../../services/db';
@@ -94,6 +96,27 @@ export const AdminSettingsPage: React.FC = () => {
             <span>¡Configuración de CM FIX guardada correctamente! Los cambios ya son visibles en presupuestos y web.</span>
           </div>
         )}
+
+        {/* Banner de acceso directo a Seguridad y Contraseñas */}
+        <div className="bg-gradient-to-r from-brand-carbon to-brand-surface border border-brand-green/40 rounded-2xl p-5 shadow-neon-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-brand-green/20 border border-brand-green/40 flex items-center justify-center text-brand-green shrink-0">
+              <KeyRound className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Seguridad y Gestión de Contraseñas</h3>
+              <p className="text-xs text-slate-400">
+                Cambia tu contraseña personal o gestiona las claves de acceso de Maury y del Técnico de Taller.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/admin/seguridad"
+            className="px-4 py-2 rounded-xl bg-brand-green hover:bg-brand-green-neon text-black font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-neon transition-all shrink-0"
+          >
+            <span>Ir a Panel de Contraseñas</span>
+          </Link>
+        </div>
 
         <form onSubmit={handleSave} className="space-y-6">
           

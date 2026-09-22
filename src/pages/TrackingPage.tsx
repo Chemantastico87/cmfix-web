@@ -25,6 +25,7 @@ export const TrackingPage: React.FC = () => {
   const [repairNumber, setRepairNumber] = useState(urlId || '');
   const [contactQuery, setContactQuery] = useState('');
   const [repair, setRepair] = useState<Repair | null>(null);
+  const [foundQuote, setFoundQuote] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
@@ -44,15 +45,22 @@ export const TrackingPage: React.FC = () => {
       QRCode.toDataURL(url, { width: 140, margin: 1, color: { dark: '#22c55e', light: '#0c120e' } })
         .then(setQrDataUrl)
         .catch(console.error);
+    } else if (foundQuote) {
+      const url = `${window.location.origin}/presupuesto/${foundQuote.id || foundQuote.quote_number}`;
+      QRCode.toDataURL(url, { width: 140, margin: 1, color: { dark: '#22c55e', light: '#0c120e' } })
+        .then(setQrDataUrl)
+        .catch(console.error);
     } else {
       setQrDataUrl(null);
     }
-  }, [repair]);
+  }, [repair, foundQuote]);
 
   const performSearch = async (num: string, contact: string) => {
     if (!num.trim()) return;
     setLoading(true);
     setSearched(true);
+    setRepair(null);
+    setFoundQuote(null);
     try {
       let found: Repair | null = null;
       if (contact.trim()) {
@@ -60,9 +68,30 @@ export const TrackingPage: React.FC = () => {
       } else {
         found = await dbService.getRepairById(num);
       }
-      setRepair(found);
+
+      if (found) {
+        setRepair(found);
+      } else {
+        // If not found in repairs, check quotes!
+        const q = await dbService.getQuoteById(num);
+        if (q) {
+          // If contact verification is provided, match phone or email
+          if (contact.trim()) {
+            const cleanContact = contact.trim().toLowerCase().replace(/\s+/g, '');
+            const phoneMatch = q.customer?.phone ? q.customer.phone.replace(/\s+/g, '').includes(cleanContact) : false;
+            const emailMatch = q.customer?.email ? q.customer.email.toLowerCase().includes(cleanContact) : false;
+            if (phoneMatch || emailMatch) {
+              setFoundQuote(q);
+            } else {
+              setFoundQuote(null);
+            }
+          } else {
+            setFoundQuote(q);
+          }
+        }
+      }
     } catch (err) {
-      console.error('Error searching repair:', err);
+      console.error('Error searching repair or quote:', err);
     } finally {
       setLoading(false);
     }
@@ -110,10 +139,10 @@ export const TrackingPage: React.FC = () => {
           SEGUIMIENTO EN TIEMPO REAL
         </span>
         <h1 className="text-2xl sm:text-4xl font-extrabold text-white mt-1">
-          Estado de tu Reparación
+          Estado de tu Reparación o Presupuesto
         </h1>
         <p className="text-xs sm:text-sm text-slate-400 mt-2 max-w-md mx-auto">
-          Introduce tu número de orden (ej. CMF-2026-00001) para ver el avance técnico de tu dispositivo.
+          Introduce tu número identificador (ej. CMF-2026-00001) para ver el avance técnico o consultar tu presupuesto digital.
         </p>
       </div>
 
@@ -125,7 +154,7 @@ export const TrackingPage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
           <div className="sm:col-span-6">
             <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-              Número de Reparación *
+              Número de Reparación o Presupuesto *
             </label>
             <input
               type="text"
@@ -139,13 +168,13 @@ export const TrackingPage: React.FC = () => {
 
           <div className="sm:col-span-6">
             <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-              Teléfono o Email (Verificación)
+              Teléfono o Email (Opcional)
             </label>
             <input
               type="text"
               value={contactQuery}
               onChange={(e) => setContactQuery(e.target.value)}
-              placeholder="Ej. 624892041 o tu@email.com"
+              placeholder="Ej. 661991060 o tu@email.com"
               className="w-full bg-brand-dark border border-brand-border rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-green"
             />
           </div>
@@ -157,7 +186,7 @@ export const TrackingPage: React.FC = () => {
               className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-brand-green hover:bg-brand-green-neon text-black font-extrabold text-sm flex items-center justify-center gap-2 shadow-neon transition-all active:scale-95 disabled:opacity-40"
             >
               {loading ? (
-                <span>Buscando...</span>
+                <span>Buscando en base de datos...</span>
               ) : (
                 <>
                   <Search className="w-4 h-4" />
@@ -169,23 +198,98 @@ export const TrackingPage: React.FC = () => {
         </div>
       </form>
 
-      {/* Result Section */}
-      {searched && !loading && !repair && (
+      {/* Result Section: NOT FOUND */}
+      {searched && !loading && !repair && !foundQuote && (
         <div className="p-8 rounded-2xl bg-brand-surface/40 border border-brand-border text-center">
           <AlertCircle className="w-10 h-10 text-amber-400 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-white">No encontramos ninguna orden con esos datos</h3>
+          <h3 className="text-base font-bold text-white">No encontramos ninguna orden o presupuesto con ese código</h3>
           <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-            Verifica que el número coincida con tu resguardo (ej. CMF-2026-00001) o contacta con el taller.
+            Verifica que el número coincida con tu código (ej. CMF-2026-00001) o contacta directamente con Maury en el taller.
           </p>
           <a
-            href="https://wa.me/34624892041"
+            href="https://wa.me/34661991060?text=Hola%20Maury,%20tengo%20una%20consulta%20sobre%20mi%20c%C3%B3digo%20de%20reparaci%C3%B3n"
             target="_blank"
             rel="noopener noreferrer"
             className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-brand-green hover:underline"
           >
             <MessageSquare className="w-3.5 h-3.5" />
-            <span>Consultar directamente con un técnico en WhatsApp</span>
+            <span>Consultar directamente con Maury en WhatsApp (+34 661 99 10 60)</span>
           </a>
+        </div>
+      )}
+
+      {/* Result Section: FOUND QUOTE */}
+      {foundQuote && !repair && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="bg-brand-carbon border border-brand-green/60 rounded-2xl p-6 sm:p-8 shadow-neon">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-brand-border/60">
+              <div>
+                <span className="text-xs font-mono font-bold text-brand-green uppercase tracking-wider">
+                  PRESUPUESTO REGISTRADO EN TALLER
+                </span>
+                <h2 className="text-xl sm:text-2xl font-black text-white font-mono mt-0.5">
+                  {foundQuote.quote_number}
+                </h2>
+                <p className="text-xs text-slate-300 mt-1">
+                  Cliente: <strong className="text-white">{foundQuote.customer?.name || 'Cliente CM FIX'}</strong>
+                </p>
+              </div>
+
+              <div className="flex items-center gap-4">
+                {qrDataUrl && (
+                  <div className="p-1.5 rounded-lg bg-brand-dark border border-brand-border text-center">
+                    <img src={qrDataUrl} alt="QR Presupuesto" className="w-16 h-16 object-contain" />
+                    <span className="text-[9px] text-slate-400 block mt-0.5">Escanear móvil</span>
+                  </div>
+                )}
+                <div className="text-right">
+                  <span className="text-xs text-slate-400 block">ESTADO</span>
+                  <span className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-bold border ${
+                    foundQuote.status === 'ACEPTADO'
+                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50'
+                      : foundQuote.status === 'RECHAZADO'
+                      ? 'bg-red-500/20 text-red-400 border-red-500/50'
+                      : 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+                  }`}>
+                    {foundQuote.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 py-5 border-b border-brand-border/40 text-xs">
+              <div>
+                <span className="text-slate-400 block">Dispositivo</span>
+                <span className="text-white font-semibold text-sm">
+                  {foundQuote.device_brand} {foundQuote.device_model}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block">Reparación Solicitada</span>
+                <span className="text-white font-semibold text-sm">
+                  {foundQuote.repair_type}
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 block">Importe Estimado (con IVA)</span>
+                <span className="text-brand-green font-bold text-base font-mono">
+                  {Number(foundQuote.total || 0).toFixed(2)} €
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-5 flex flex-wrap items-center justify-between gap-4">
+              <p className="text-xs text-slate-300">
+                Puedes revisar el desglose técnico completo, aceptar el presupuesto o descargar la factura proforma en PDF.
+              </p>
+              <Link
+                to={`/presupuesto/${foundQuote.id || foundQuote.quote_number}`}
+                className="px-6 py-3 rounded-xl bg-brand-green hover:bg-brand-green-neon text-black font-extrabold text-xs flex items-center gap-2 shadow-neon transition-all"
+              >
+                <span>Ver y Gestionar Presupuesto Digital</span>
+              </Link>
+            </div>
+          </div>
         </div>
       )}
 

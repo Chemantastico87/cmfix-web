@@ -26,6 +26,7 @@ import { AdminInventoryPage } from './pages/admin/AdminInventoryPage';
 import { AdminSuppliersPage } from './pages/admin/AdminSuppliersPage';
 import { AdminPricingCatalogPage } from './pages/admin/AdminPricingCatalogPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
+import { AdminSecurityPage } from './pages/admin/AdminSecurityPage';
 
 // Layout wrapper to conditionally hide Navbar & Footer on /admin routes
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -70,6 +71,8 @@ export const App: React.FC = () => {
             <Route path="/admin/proveedores" element={<AdminSuppliersPage />} />
             <Route path="/admin/precios" element={<AdminPricingCatalogPage />} />
             <Route path="/admin/configuracion" element={<AdminSettingsPage />} />
+            <Route path="/admin/seguridad" element={<AdminSecurityPage />} />
+            <Route path="/admin/perfil" element={<AdminSecurityPage />} />
 
             {/* Fallback route */}
             <Route path="*" element={<HomePage />} />
