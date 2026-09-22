@@ -117,63 +117,6 @@ export const LoginPage: React.FC = () => {
           </button>
         </form>
 
-        {/* Panel de Credenciales Autorizadas */}
-        <div className="mt-8 pt-6 border-t border-brand-border/60">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-              Credenciales de Acceso Asignadas:
-            </span>
-          </div>
-
-          <div className="space-y-2 text-xs">
-            {/* Maury Admin */}
-            <div className="p-3 rounded-xl bg-brand-surface border border-brand-green/30 flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-1.5 font-bold text-white">
-                  <ShieldCheck className="w-3.5 h-3.5 text-brand-green" />
-                  <span>Maury (Administrador)</span>
-                </div>
-                <div className="text-[11px] text-slate-400 mt-0.5">
-                  Usuario: <span className="text-slate-200 font-mono">maury@cmfix.es</span> · Clave: <span className="text-brand-green font-mono">mauri123</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('maury@cmfix.es');
-                  setPassword('mauri123');
-                }}
-                className="px-2.5 py-1 rounded-lg bg-brand-green/10 hover:bg-brand-green/20 text-brand-green text-[11px] font-semibold border border-brand-green/30 transition-all"
-              >
-                Rellenar
-              </button>
-            </div>
-
-            {/* Técnico Taller */}
-            <div className="p-3 rounded-xl bg-brand-surface border border-brand-border flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-1.5 font-bold text-slate-200">
-                  <Wrench className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Técnico de Taller</span>
-                </div>
-                <div className="text-[11px] text-slate-400 mt-0.5">
-                  Usuario: <span className="text-slate-200 font-mono">tecnico@cmfix.es</span> · Clave: <span className="text-blue-400 font-mono">tecnico123</span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setEmail('tecnico@cmfix.es');
-                  setPassword('tecnico123');
-                }}
-                className="px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-[11px] font-semibold border border-blue-500/30 transition-all"
-              >
-                Rellenar
-              </button>
-            </div>
-          </div>
-        </div>
-
       </div>
 
     </div>
