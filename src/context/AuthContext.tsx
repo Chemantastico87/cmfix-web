@@ -7,6 +7,19 @@ export interface AuthUser {
   email: string;
   name: string;
   role: UserRole;
+  isCreator?: boolean;
+}
+
+export interface ManagedUser {
+  id: string;
+  name: string;
+  email: string;
+  username: string;
+  password: string;
+  role: UserRole;
+  active: boolean;
+  createdAt: string;
+  createdBy?: string;
 }
 
 export interface StoredPasswordInfo {
@@ -33,12 +46,26 @@ interface AuthContextType {
   getPasswordsInfo: () => { adminUpdatedAt?: string; tecnicoUpdatedAt?: string };
   resetToDefaultPassword: (target: 'admin' | 'tecnico') => void;
   isSupabaseLive: boolean;
+  // Gestión de Plantilla / Usuarios
+  managedUsers: ManagedUser[];
+  getManagedUsers: () => ManagedUser[];
+  createManagedUser: (userData: {
+    name: string;
+    email: string;
+    username?: string;
+    password: string;
+    role: UserRole;
+  }) => { success: boolean; error?: string; user?: ManagedUser };
+  updateManagedUser: (id: string, updates: Partial<ManagedUser>) => { success: boolean; error?: string };
+  deleteManagedUser: (id: string) => { success: boolean; error?: string };
+  changeManagedUserPassword: (id: string, newPass: string) => { success: boolean; error?: string };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const SESSION_AUTH_KEY = 'cmfix_active_session';
 const CUSTOM_PASSWORDS_KEY = 'cmfix_custom_passwords';
+const MANAGED_USERS_KEY = 'cmfix_custom_users';
 
 const DEFAULT_PASSWORDS = {
   admin: 'mauri123',
@@ -62,9 +89,27 @@ function saveStoredPasswords(data: CustomPasswordsStore): void {
   }
 }
 
+function getStoredManagedUsers(): ManagedUser[] {
+  try {
+    const raw = localStorage.getItem(MANAGED_USERS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredManagedUsers(data: ManagedUser[]): void {
+  try {
+    localStorage.setItem(MANAGED_USERS_KEY, JSON.stringify(data));
+  } catch (err) {
+    console.error('Error saving managed users:', err);
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [managedUsers, setManagedUsers] = useState<ManagedUser[]>([]);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -74,12 +119,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('cmfix_auth');
       } catch {}
 
-      // 2. Comprobar únicamente la sesión activa de la pestaña actual (sessionStorage)
+      // 2. Cargar lista de usuarios creados
+      setManagedUsers(getStoredManagedUsers());
+
+      // 3. Comprobar únicamente la sesión activa de la pestaña actual (sessionStorage)
       try {
         const saved = sessionStorage.getItem(SESSION_AUTH_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          setUser({ ...parsed, role: 'ADMIN' });
+          const isTech = parsed.isCreator ?? (parsed.email?.includes('tecnic') || parsed.id === 'tech-cmfix');
+          setUser({ ...parsed, isCreator: isTech });
         } else {
           setUser(null);
         }
@@ -108,12 +157,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             password: cleanPass
           });
           if (!error && data.user) {
-            const isTech = cleanUser.includes('tecnico');
+            const isTech = cleanUser.includes('tecnico') || cleanUser.includes('technico');
             const authUser: AuthUser = {
               id: data.user.id,
               email: data.user.email || cleanUser,
-              name: isTech ? 'Técnico de Taller CM FIX' : 'Maury (Administrador)',
-              role: 'ADMIN' // Mismos derechos
+              name: isTech ? 'Técnico Creador (Super Admin)' : 'Maury (Administrador)',
+              role: 'ADMIN',
+              isCreator: isTech
             };
             setUser(authUser);
             sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(authUser));
@@ -155,7 +205,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: 'admin-maury',
           email: 'cmfixespana@gmail.com',
           name: 'Maury (Administrador)',
-          role: 'ADMIN'
+          role: 'ADMIN',
+          isCreator: false
         };
         setUser(adminUser);
         sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(adminUser));
@@ -163,7 +214,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: true };
       }
 
-      // B) TÉCNICO DE TALLER (ADMINISTRADOR TÉCNICO - MISMOS DERECHOS)
+      // B) TÉCNICO CREADOR / SUPER ADMIN (MISMOS DERECHOS + CREADOR DEL SISTEMA)
       const isTecnicoUser = 
         cleanUser === 'tecnico@cmfix.es' || 
         cleanUser === 'technico@cmfix.es' || 
@@ -189,11 +240,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const techUser: AuthUser = {
           id: 'tech-cmfix',
           email: 'tecnico@cmfix.es',
-          name: 'Técnico de Taller CM FIX',
-          role: 'ADMIN' // Mismos derechos que Maury
+          name: 'Técnico Creador (Super Admin)',
+          role: 'ADMIN',
+          isCreator: true
         };
         setUser(techUser);
         sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(techUser));
+        setLoading(false);
+        return { success: true };
+      }
+
+      // C) USUARIOS CREADOS DE LA PLANTILLA
+      const currentManaged = getStoredManagedUsers();
+      const matchedManaged = currentManaged.find(u => 
+        u.active !== false && 
+        (u.email.toLowerCase() === cleanUser || (u.username && u.username.toLowerCase() === cleanUser)) &&
+        u.password === cleanPass
+      );
+
+      if (matchedManaged) {
+        const authUser: AuthUser = {
+          id: matchedManaged.id,
+          email: matchedManaged.email,
+          name: matchedManaged.name,
+          role: matchedManaged.role,
+          isCreator: false
+        };
+        setUser(authUser);
+        sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(authUser));
         setLoading(false);
         return { success: true };
       }
@@ -289,6 +363,100 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     saveStoredPasswords(customStore);
   };
 
+  // --- Funciones de Gestión de Plantilla / Nuevos Usuarios ---
+  const getManagedUsers = (): ManagedUser[] => {
+    return getStoredManagedUsers();
+  };
+
+  const createManagedUser = (userData: {
+    name: string;
+    email: string;
+    username?: string;
+    password: string;
+    role: UserRole;
+  }): { success: boolean; error?: string; user?: ManagedUser } => {
+    if (!userData.name?.trim()) {
+      return { success: false, error: 'El nombre completo es obligatorio.' };
+    }
+    if (!userData.password || userData.password.trim().length < 4) {
+      return { success: false, error: 'La contraseña debe tener al menos 4 caracteres.' };
+    }
+
+    const cleanEmail = (userData.email || '').trim().toLowerCase();
+    const cleanUsername = (userData.username || cleanEmail.split('@')[0] || '').trim().toLowerCase();
+
+    if (!cleanEmail && !cleanUsername) {
+      return { success: false, error: 'Se requiere al menos un correo o nombre de usuario.' };
+    }
+
+    const currentUsers = getStoredManagedUsers();
+    const exists = currentUsers.some(
+      u => (cleanEmail && u.email.toLowerCase() === cleanEmail) || 
+           (cleanUsername && u.username.toLowerCase() === cleanUsername)
+    );
+
+    if (
+      exists || 
+      cleanEmail === 'cmfixespana@gmail.com' || 
+      cleanEmail === 'tecnico@cmfix.es' || 
+      cleanEmail === 'technico@cmfix.es' ||
+      cleanUsername === 'maury' ||
+      cleanUsername === 'tecnico' ||
+      cleanUsername === 'technico'
+    ) {
+      return { success: false, error: 'Ya existe un usuario o técnico con ese identificador.' };
+    }
+
+    const newUser: ManagedUser = {
+      id: 'usr-' + Date.now(),
+      name: userData.name.trim(),
+      email: cleanEmail || `${cleanUsername}@cmfix.es`,
+      username: cleanUsername,
+      password: userData.password.trim(),
+      role: userData.role || 'TECNICO',
+      active: true,
+      createdAt: new Date().toLocaleDateString('es-ES', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric' 
+      }),
+      createdBy: user?.name || 'Técnico Creador'
+    };
+
+    const updated = [newUser, ...currentUsers];
+    saveStoredManagedUsers(updated);
+    setManagedUsers(updated);
+    return { success: true, user: newUser };
+  };
+
+  const updateManagedUser = (id: string, updates: Partial<ManagedUser>): { success: boolean; error?: string } => {
+    const currentUsers = getStoredManagedUsers();
+    const index = currentUsers.findIndex(u => u.id === id);
+    if (index === -1) {
+      return { success: false, error: 'Usuario no encontrado.' };
+    }
+
+    currentUsers[index] = { ...currentUsers[index], ...updates };
+    saveStoredManagedUsers(currentUsers);
+    setManagedUsers([...currentUsers]);
+    return { success: true };
+  };
+
+  const deleteManagedUser = (id: string): { success: boolean; error?: string } => {
+    const currentUsers = getStoredManagedUsers();
+    const filtered = currentUsers.filter(u => u.id !== id);
+    saveStoredManagedUsers(filtered);
+    setManagedUsers(filtered);
+    return { success: true };
+  };
+
+  const changeManagedUserPassword = (id: string, newPass: string): { success: boolean; error?: string } => {
+    if (!newPass || newPass.trim().length < 4) {
+      return { success: false, error: 'La nueva contraseña debe tener al menos 4 caracteres.' };
+    }
+    return updateManagedUser(id, { password: newPass.trim() });
+  };
+
   const logout = async () => {
     if (isSupabaseConfigured && supabase) {
       try {
@@ -312,7 +480,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       changePassword, 
       getPasswordsInfo,
       resetToDefaultPassword,
-      isSupabaseLive: isSupabaseConfigured 
+      isSupabaseLive: isSupabaseConfigured,
+      managedUsers,
+      getManagedUsers,
+      createManagedUser,
+      updateManagedUser,
+      deleteManagedUser,
+      changeManagedUserPassword
     }}>
       {children}
     </AuthContext.Provider>

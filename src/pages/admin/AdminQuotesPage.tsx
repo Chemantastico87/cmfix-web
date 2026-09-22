@@ -12,7 +12,8 @@ import {
   ExternalLink,
   Plus,
   RefreshCw,
-  Printer
+  Printer,
+  Trash2
 } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { dbService } from '../../services/db';
@@ -47,15 +48,41 @@ export const AdminQuotesPage: React.FC = () => {
   }, []);
 
   const handleConvertQuoteToRepair = async (quote: Quote) => {
-    if (!window.confirm(`¿Deseas convertir el presupuesto ${quote.quote_number} en una orden de reparación activa?`)) {
+    if (!window.confirm(`¿Deseas convertir el presupuesto ${quote.quote_number} en una orden de reparación activa en taller?`)) {
       return;
     }
     try {
       await dbService.updateQuoteStatus(quote.id, 'ACEPTADO');
-      alert(`¡Orden de reparación ${quote.quote_number} creada con éxito!`);
+      alert(`¡Presupuesto ${quote.quote_number} aceptado y orden de reparación creada con éxito!`);
       loadData();
     } catch (err) {
       console.error('Error converting quote to repair:', err);
+    }
+  };
+
+  const handleStatusChange = async (quote: Quote, newStatus: QuoteStatus) => {
+    if (quote.status === newStatus) return;
+    try {
+      await dbService.updateQuoteStatus(quote.id, newStatus);
+      await loadData();
+    } catch (err) {
+      console.error('Error updating quote status:', err);
+      alert('Error al actualizar el estado del presupuesto.');
+    }
+  };
+
+  const handleDeleteQuote = async (quote: Quote) => {
+    const confirmDelete = window.confirm(
+      `¿Estás seguro de que deseas eliminar permanentemente el presupuesto ${quote.quote_number} (${quote.customer?.name || 'Cliente'})?\n\nEsta acción eliminará el registro de la base de datos y no se puede deshacer.`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await dbService.deleteQuote(quote.id);
+      await loadData();
+    } catch (err) {
+      console.error('Error deleting quote:', err);
+      alert('Error al eliminar el presupuesto.');
     }
   };
 
@@ -174,13 +201,25 @@ export const AdminQuotesPage: React.FC = () => {
                       <div className="text-[10px] text-slate-400">{q.repair_type}</div>
                     </td>
                     <td className="p-3.5 text-center">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                        q.status === 'ACEPTADO' ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/40' :
-                        q.status === 'PENDIENTE' ? 'bg-amber-950 text-amber-400 border border-amber-500/40' :
-                        'bg-brand-surface text-slate-400 border border-brand-border'
-                      }`}>
-                        {q.status}
-                      </span>
+                      <select
+                        value={q.status}
+                        onChange={(e) => handleStatusChange(q, e.target.value as QuoteStatus)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border cursor-pointer focus:outline-none transition-colors ${
+                          q.status === 'ACEPTADO' 
+                            ? 'bg-emerald-950/90 text-emerald-400 border-emerald-500/50 hover:border-emerald-400' 
+                            : q.status === 'PENDIENTE' 
+                            ? 'bg-amber-950/90 text-amber-400 border-amber-500/50 hover:border-amber-400' 
+                            : q.status === 'RECHAZADO'
+                            ? 'bg-red-950/90 text-red-400 border-red-500/50 hover:border-red-400'
+                            : 'bg-brand-surface text-slate-400 border-brand-border hover:border-slate-500'
+                        }`}
+                        title="Haz clic para cambiar el estado"
+                      >
+                        <option value="PENDIENTE" className="bg-brand-carbon text-amber-400">PENDIENTE</option>
+                        <option value="ACEPTADO" className="bg-brand-carbon text-emerald-400">ACEPTADO</option>
+                        <option value="RECHAZADO" className="bg-brand-carbon text-red-400">RECHAZADO</option>
+                        <option value="CADUCADO" className="bg-brand-carbon text-slate-400">CADUCADO</option>
+                      </select>
                     </td>
                     <td className="p-3.5 text-right font-mono font-bold text-white text-sm">
                       {q.total.toFixed(2)} €
@@ -190,19 +229,26 @@ export const AdminQuotesPage: React.FC = () => {
                         {q.status === 'PENDIENTE' && (
                           <button
                             onClick={() => handleConvertQuoteToRepair(q)}
-                            className="px-2.5 py-1 rounded-lg bg-brand-green hover:bg-brand-green-neon text-black font-bold text-[10px] flex items-center gap-1 shadow-sm transition-all"
-                            title="Convertir directamente a reparación"
+                            className="px-2 py-1 rounded-lg bg-brand-green hover:bg-brand-green-neon text-black font-bold text-[10px] flex items-center gap-1 shadow-sm transition-all"
+                            title="Convertir directamente a reparación en taller"
                           >
                             <Wrench className="w-3 h-3" />
-                            <span>Convertir a Taller</span>
+                            <span>A Taller</span>
                           </button>
                         )}
                         <button
                           onClick={() => handleDownloadPDF(q)}
-                          className="p-1.5 rounded-lg bg-brand-surface hover:bg-brand-elevated text-slate-300 hover:text-white border border-brand-border"
-                          title="Descargar PDF"
+                          className="p-1.5 rounded-lg bg-brand-surface hover:bg-brand-elevated text-slate-300 hover:text-white border border-brand-border transition-colors"
+                          title="Descargar presupuesto en PDF"
                         >
                           <Download className="w-3.5 h-3.5 text-brand-green" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteQuote(q)}
+                          className="p-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-400 hover:text-red-200 border border-red-500/30 transition-colors"
+                          title="Eliminar presupuesto"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>

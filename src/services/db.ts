@@ -553,6 +553,42 @@ export const dbService = {
     return quote;
   },
 
+  async deleteQuote(id: string): Promise<boolean> {
+    if (!id) return false;
+    const cleanId = id.trim().toLowerCase();
+    
+    // 1. Eliminar localmente
+    const quotes = await this.getQuotes();
+    const targetQuote = quotes.find(q => 
+      q.id.toLowerCase() === cleanId || 
+      (q.quote_number && q.quote_number.toLowerCase() === cleanId)
+    );
+    const filtered = quotes.filter(q => 
+      q.id.toLowerCase() !== cleanId && 
+      (!q.quote_number || q.quote_number.toLowerCase() !== cleanId)
+    );
+    setLocal(STORAGE_KEYS.QUOTES, filtered);
+
+    // 2. Eliminar de Supabase si está disponible
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id.trim());
+        if (isUuid) {
+          await supabase.from('quotes').delete().eq('id', id.trim());
+        }
+        if (targetQuote?.quote_number) {
+          await supabase.from('quotes').delete().eq('quote_number', targetQuote.quote_number);
+        } else if (!isUuid) {
+          await supabase.from('quotes').delete().eq('quote_number', id.trim());
+        }
+      } catch (err) {
+        console.warn('Error deleting quote from Supabase:', err);
+      }
+    }
+
+    return true;
+  },
+
   // --- Repairs ---
   async getRepairs(): Promise<Repair[]> {
     const localRepairs = getLocal<Repair[]>(STORAGE_KEYS.REPAIRS, INITIAL_REPAIRS);

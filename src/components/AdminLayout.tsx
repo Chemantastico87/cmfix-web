@@ -16,7 +16,8 @@ import {
   Bell, 
   ShieldCheck,
   Smartphone,
-  KeyRound
+  KeyRound,
+  UserCog
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -54,6 +55,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { label: 'Inventario / Piezas', path: '/admin/inventario', icon: Package },
     { label: 'Proveedores', path: '/admin/proveedores', icon: Truck },
     { label: 'Catálogo de Precios', path: '/admin/precios', icon: Tag },
+    { label: 'Gestión de Equipo', path: '/admin/usuarios', icon: UserCog },
     { label: 'Configuración', path: '/admin/configuracion', icon: Settings },
     { label: 'Cambiar Contraseña', path: '/admin/seguridad', icon: KeyRound },
   ];

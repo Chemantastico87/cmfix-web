@@ -30,7 +30,7 @@ export type QuoteStatus =
   | 'RECHAZADO'
   | 'CADUCADO';
 
-export type UserRole = 'ADMIN' | 'TECNICO';
+export type UserRole = 'ADMIN' | 'TECNICO' | 'RECEPCION';
 
 export interface Customer {
   id: string;
