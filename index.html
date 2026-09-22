@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <meta name="theme-color" content="#070a08" />
+    
+    <!-- Primary Meta Tags -->
+    <title>CM FIX | Reparación de móviles, ordenadores y tecnología</title>
+    <meta name="title" content="CM FIX | Reparación de móviles, ordenadores y tecnología" />
+    <meta name="description" content="CM FIX - Reparación de móviles, ordenadores, portátiles y dispositivos tecnológicos con diagnóstico, presupuesto inmediato y seguimiento en tiempo real." />
+    <meta name="keywords" content="reparacion moviles, reparacion ordenadores, portatiles, cambio pantalla iphone, bateria samsung, servicio tecnico informatico, CM FIX" />
+    <meta name="author" content="CM FIX" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CM FIX | Tu tecnología en buenas manos" />
+    <meta property="og:description" content="Reparación express de móviles, portátiles, PC y mantenimiento informático profesional. Solicita tu presupuesto online en 2 minutos." />
+    <meta property="og:image" content="/CMfix.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:title" content="CM FIX | Reparación y Servicios Tecnológicos" />
+    <meta property="twitter:description" content="Reparación de móviles, ordenadores y tecnología con seguimiento en vivo." />
+    <meta property="twitter:image" content="/CMfix.png" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  </head>
+  <body class="bg-brand-dark text-slate-100 font-sans antialiased min-h-screen selection:bg-brand-green selection:text-black">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Service Worker Registration for PWA
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(err => {
+            console.log('SW registration note:', err);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
