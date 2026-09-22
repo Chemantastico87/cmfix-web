@@ -14,19 +14,12 @@ import { useAuth } from '../context/AuthContext';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login, user, isSupabaseLive } = useAuth();
+  const { login, logout, user, isSupabaseLive } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // If already logged in, redirect to /admin
-  React.useEffect(() => {
-    if (user) {
-      navigate('/admin');
-    }
-  }, [user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +57,31 @@ export const LoginPage: React.FC = () => {
             {isSupabaseLive ? 'Acceso mediante Supabase Auth' : 'Acceso de gestión técnica'}
           </p>
         </div>
+
+        {user && (
+          <div className="mb-6 p-4 rounded-xl bg-emerald-950/70 border border-emerald-500/50 text-xs text-emerald-300 space-y-3">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Sesión activa en esta pestaña: <strong>{user.name}</strong></span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate('/admin')}
+                className="flex-1 py-2 px-3 rounded-lg bg-brand-green hover:bg-brand-green-neon text-black font-extrabold text-xs shadow-neon transition-all"
+              >
+                Continuar al Panel
+              </button>
+              <button
+                type="button"
+                onClick={logout}
+                className="py-2 px-3 rounded-lg border border-red-500/40 text-red-300 hover:bg-red-950/40 text-xs font-semibold transition-all"
+              >
+                Cerrar sesión
+              </button>
+            </div>
+          </div>
+        )}
 
         {errorMsg && (
           <div className="mb-6 p-3 rounded-xl bg-red-950/60 border border-red-500/40 text-red-300 text-xs flex items-center gap-2">

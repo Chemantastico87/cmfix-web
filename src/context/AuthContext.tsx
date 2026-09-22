@@ -37,7 +37,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const LOCAL_AUTH_KEY = 'cmfix_auth_session';
+const SESSION_AUTH_KEY = 'cmfix_active_session';
 const CUSTOM_PASSWORDS_KEY = 'cmfix_custom_passwords';
 
 const DEFAULT_PASSWORDS = {
@@ -68,42 +68,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const initAuth = async () => {
-      if (isSupabaseConfigured && supabase) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
+      // 1. Limpiar completamente cualquier sesión antigua guardada en localStorage
+      try {
+        localStorage.removeItem('cmfix_auth_session');
+        localStorage.removeItem('cmfix_auth');
+      } catch {}
 
-            const isTech = session.user.email?.includes('tecnico');
-            setUser({
-              id: session.user.id,
-              email: session.user.email || (isTech ? 'tecnico@cmfix.es' : 'cmfixespana@gmail.com'),
-              name: profile?.full_name || (isTech ? 'Técnico de Taller CM FIX' : 'Maury (Administrador)'),
-              role: 'ADMIN' // Ambos perfiles disponen de plenos derechos de administrador
-            });
-            setLoading(false);
-            return;
-          }
-        } catch (e) {
-          console.warn('Supabase session load error:', e);
-        }
-      }
-
-      // Local mode session
-      const saved = localStorage.getItem(LOCAL_AUTH_KEY);
-      if (saved) {
-        try {
+      // 2. Comprobar únicamente la sesión activa de la pestaña actual (sessionStorage)
+      try {
+        const saved = sessionStorage.getItem(SESSION_AUTH_KEY);
+        if (saved) {
           const parsed = JSON.parse(saved);
-          // Garantizar que ambos tienen rol ADMIN con plenos derechos
           setUser({ ...parsed, role: 'ADMIN' });
-        } catch {
-          localStorage.removeItem(LOCAL_AUTH_KEY);
+        } else {
+          setUser(null);
         }
+      } catch {
+        sessionStorage.removeItem(SESSION_AUTH_KEY);
+        setUser(null);
       }
+
       setLoading(false);
     };
 
@@ -132,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               role: 'ADMIN' // Mismos derechos
             };
             setUser(authUser);
-            localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(authUser));
+            sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(authUser));
             setLoading(false);
             return { success: true };
           }
@@ -163,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: 'ADMIN'
         };
         setUser(adminUser);
-        localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(adminUser));
+        sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(adminUser));
         setLoading(false);
         return { success: true };
       }
@@ -186,7 +170,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: 'ADMIN' // Mismos derechos que Maury
         };
         setUser(techUser);
-        localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(techUser));
+        sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(techUser));
         setLoading(false);
         return { success: true };
       }
@@ -289,7 +273,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch {}
     }
     setUser(null);
-    localStorage.removeItem(LOCAL_AUTH_KEY);
+    try {
+      sessionStorage.removeItem(SESSION_AUTH_KEY);
+      localStorage.removeItem('cmfix_auth_session');
+      localStorage.removeItem('cmfix_auth');
+    } catch {}
   };
 
   return (
