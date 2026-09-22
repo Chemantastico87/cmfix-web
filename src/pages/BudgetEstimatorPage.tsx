@@ -20,7 +20,10 @@ import {
   Phone,
   Mail,
   User,
-  Info
+  Info,
+  Globe,
+  Code,
+  Layers
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { DeviceCategory, PricingCatalogItem, CompanySettings } from '../types';
@@ -101,6 +104,16 @@ export const BudgetEstimatorPage: React.FC = () => {
     else if (cat === 'PC') setBrand('Sobremesa');
     else if (cat === 'Tablet') setBrand('Apple iPad');
     else if (cat === 'Consola') setBrand('Sony PlayStation');
+    else if (cat === 'Página Web') {
+      setBrand('Desarrollo Web');
+      setModel('Web Corporativa Profesional');
+      setRepairType('Desarrollo completo desde cero + Dominio + SSL');
+    }
+    else if (cat === 'App Móvil') {
+      setBrand('Desarrollo App / Software');
+      setModel('Web App / PWA Multiplataforma');
+      setRepairType('Desarrollo de App a Medida + Base de Datos');
+    }
     else setBrand('');
   };
 
@@ -115,14 +128,47 @@ export const BudgetEstimatorPage: React.FC = () => {
     Mac: ['MacBook Pro 14" / 16"', 'MacBook Air M1 / M2', 'iMac 24"', 'Mac mini'],
     Tablet: ['iPad Pro 11" / 12.9"', 'iPad Air', 'iPad 10ª Gen', 'Samsung Galaxy Tab S9', 'Lenovo Tab M10'],
     Consola: ['PlayStation 5', 'PlayStation 4 Pro', 'Nintendo Switch OLED', 'Xbox Series X', 'Xbox Series S'],
+    'Página Web': [
+      'Landing Page / Web One-Page',
+      'Web Corporativa Profesional',
+      'Tienda Online / E-commerce',
+      'Web a Medida + Panel Administrable'
+    ],
+    'App Móvil': [
+      'Web App / PWA Multiplataforma',
+      'App Móvil Nativa (iOS & Android)',
+      'App de Gestión Interna / Taller / CRM',
+      'Portal / Área Privada de Clientes'
+    ],
     Otro: ['Dispositivo personalizado']
   };
 
   // Repairs list per Category
   const isMobile = ['iPhone', 'Samsung', 'Xiaomi', 'Android'].includes(category);
   const isComputer = ['PC', 'Portátil', 'Mac'].includes(category);
+  const isWeb = category === 'Página Web';
+  const isApp = category === 'App Móvil';
+  const isWebOrApp = isWeb || isApp;
 
-  const repairOptions = isMobile
+  const repairOptions = isWeb
+    ? [
+        'Desarrollo completo desde cero + Dominio + SSL',
+        'Rediseño y modernización de web existente',
+        'Integración de pasarela de pago (Bizum, Tarjeta, Stripe)',
+        'Optimización SEO en Google y velocidad de carga',
+        'Mantenimiento web anual + Soporte técnico continuo',
+        'Añadir nuevas funciones / Programación a medida'
+      ]
+    : isApp
+    ? [
+        'Desarrollo de App a Medida + Base de Datos',
+        'Publicación en Google Play y Apple App Store',
+        'Panel de control administrativo en la nube',
+        'Sistema de notificaciones push automáticas',
+        'Integración de pagos y suscripciones online',
+        'Mantenimiento mensual y soporte evolutivo'
+      ]
+    : isMobile
     ? [
         'Cambio de pantalla OLED / AMOLED',
         'Cambio de batería',
@@ -178,6 +224,74 @@ export const BudgetEstimatorPage: React.FC = () => {
       basePrice = catalogMatch.sale_price;
       estimatedTime = catalogMatch.estimated_time;
       isOrientative = false; // Known exact catalog price
+    } else if (category === 'Página Web') {
+      let webBase = 290;
+      estimatedTime = '3-5 días laborables';
+      partCost = 50;
+
+      if (model.includes('Corporativa')) {
+        webBase = 590;
+        partCost = 90;
+        estimatedTime = '7-12 días laborables';
+      } else if (model.includes('Tienda') || model.includes('E-commerce')) {
+        webBase = 990;
+        partCost = 150;
+        estimatedTime = '15-20 días laborables';
+      } else if (model.includes('Medida') || model.includes('Panel')) {
+        webBase = 1490;
+        partCost = 200;
+        estimatedTime = '2-3 semanas';
+      }
+
+      if (repairType.includes('Rediseño')) {
+        webBase = Math.round(webBase * 0.85);
+      } else if (repairType.includes('SEO')) {
+        webBase += 150;
+      } else if (repairType.includes('pasarela')) {
+        webBase += 120;
+      } else if (repairType.includes('Mantenimiento')) {
+        webBase = 180;
+        partCost = 30;
+        estimatedTime = 'Inmediato (Anual)';
+      }
+
+      laborCost = webBase - partCost;
+      basePrice = webBase;
+      isOrientative = true;
+    } else if (category === 'App Móvil') {
+      let appBase = 790;
+      estimatedTime = '10-15 días laborables';
+      partCost = 100;
+
+      if (model.includes('Nativa') || model.includes('Stores')) {
+        appBase = 1850;
+        partCost = 250;
+        estimatedTime = '3-4 semanas';
+      } else if (model.includes('Gestión') || model.includes('CRM') || model.includes('Taller')) {
+        appBase = 1350;
+        partCost = 200;
+        estimatedTime = '2-3 semanas';
+      } else if (model.includes('Portal') || model.includes('Área Privada')) {
+        appBase = 950;
+        partCost = 150;
+        estimatedTime = '10-15 días laborables';
+      }
+
+      if (repairType.includes('Stores')) {
+        appBase += 190;
+      } else if (repairType.includes('notificaciones')) {
+        appBase += 120;
+      } else if (repairType.includes('pagos')) {
+        appBase += 150;
+      } else if (repairType.includes('Mantenimiento')) {
+        appBase = 240;
+        partCost = 40;
+        estimatedTime = 'Inmediato (Trimestral)';
+      }
+
+      laborCost = appBase - partCost;
+      basePrice = appBase;
+      isOrientative = true;
     } else {
       // Heuristic estimation based on repair type
       if (repairType.includes('pantalla')) {
@@ -217,9 +331,10 @@ export const BudgetEstimatorPage: React.FC = () => {
     }
 
     if (urgency === 'URGENTE') {
-      laborCost += 20;
-      basePrice += 20;
-      estimatedTime = 'Urgente (< 3 horas)';
+      const extraLabor = (category === 'Página Web' || category === 'App Móvil') ? 150 : 20;
+      laborCost += extraLabor;
+      basePrice += extraLabor;
+      estimatedTime = (category === 'Página Web' || category === 'App Móvil') ? 'Express (Prioridad técnica)' : 'Urgente (< 3 horas)';
     }
 
     const vatRate = settings?.default_vat || 21;
@@ -316,8 +431,8 @@ export const BudgetEstimatorPage: React.FC = () => {
         {step < 5 && (
           <div className="flex items-center justify-center gap-2 mt-6">
             {[
-              { num: 1, label: 'Dispositivo' },
-              { num: 2, label: 'Avería' },
+              { num: 1, label: isWebOrApp ? 'Proyecto' : 'Dispositivo' },
+              { num: 2, label: isWebOrApp ? 'Servicio' : 'Avería' },
               { num: 3, label: 'Desglose' },
               { num: 4, label: 'Tus Datos' }
             ].map((s) => (
@@ -339,16 +454,16 @@ export const BudgetEstimatorPage: React.FC = () => {
         )}
       </div>
 
-      {/* STEP 1: DISPOSITIVO Y MODELO */}
+      {/* STEP 1: DISPOSITIVO O PROYECTO WEB/APP */}
       {step === 1 && (
         <div className="bg-brand-carbon/90 border border-brand-border rounded-2xl p-6 sm:p-8 shadow-card backdrop-blur-md animate-fadeIn">
           <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-brand-green text-black text-xs font-black flex items-center justify-center">1</span>
-            <span>Selecciona tu categoría de dispositivo</span>
+            <span>{isWebOrApp ? 'Selecciona tu tipo de proyecto digital' : 'Selecciona tu categoría de dispositivo'}</span>
           </h2>
 
           {/* Category Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-6">
             {[
               { cat: 'iPhone', icon: Smartphone },
               { cat: 'Samsung', icon: Smartphone },
@@ -359,6 +474,8 @@ export const BudgetEstimatorPage: React.FC = () => {
               { cat: 'Mac', icon: Laptop },
               { cat: 'Tablet', icon: Tablet },
               { cat: 'Consola', icon: Gamepad2 },
+              { cat: 'Página Web', icon: Globe, badge: '¡Nuevo!' },
+              { cat: 'App Móvil', icon: Code, badge: '¡Nuevo!' },
               { cat: 'Otro', icon: HelpCircle }
             ].map((item) => {
               const IconC = item.icon;
@@ -368,12 +485,17 @@ export const BudgetEstimatorPage: React.FC = () => {
                   key={item.cat}
                   type="button"
                   onClick={() => handleCategorySelect(item.cat as DeviceCategory)}
-                  className={`p-3 rounded-xl border flex flex-col items-center justify-center gap-2 text-center transition-all ${
+                  className={`relative p-3 rounded-xl border flex flex-col items-center justify-center gap-2 text-center transition-all ${
                     isSelected
                       ? 'bg-brand-surface border-brand-green text-white shadow-neon-sm'
                       : 'bg-brand-dark/70 border-brand-border/80 text-slate-400 hover:text-white hover:border-slate-600'
                   }`}
                 >
+                  {item.badge && (
+                    <span className="absolute -top-1.5 -right-1 bg-brand-green text-black text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-tighter shadow-neon-sm">
+                      {item.badge}
+                    </span>
+                  )}
                   <IconC className={`w-5 h-5 ${isSelected ? 'text-brand-green' : 'text-slate-400'}`} />
                   <span className="text-xs font-bold">{item.cat}</span>
                 </button>
@@ -386,13 +508,13 @@ export const BudgetEstimatorPage: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Marca
+                  {isWebOrApp ? 'Marca o Nombre de tu Negocio' : 'Marca'}
                 </label>
                 <input
                   type="text"
                   value={brand}
                   onChange={(e) => setBrand(e.target.value)}
-                  placeholder="Ej. Apple, Samsung, Xiaomi..."
+                  placeholder={isWebOrApp ? 'Ej. Empresa de servicios, Clínica, Tienda...' : 'Ej. Apple, Samsung, Xiaomi...'}
                   required
                   className="w-full bg-brand-dark border border-brand-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-green"
                 />
@@ -400,13 +522,13 @@ export const BudgetEstimatorPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Modelo exacto
+                  {isWebOrApp ? 'Tipo de Web o Aplicación deseada' : 'Modelo exacto'}
                 </label>
                 <input
                   type="text"
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
-                  placeholder="Ej. iPhone 13 Pro, Galaxy S23..."
+                  placeholder={isWebOrApp ? 'Ej. Web Corporativa, Tienda Online, PWA...' : 'Ej. iPhone 13 Pro, Galaxy S23...'}
                   required
                   className="w-full bg-brand-dark border border-brand-border rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-brand-green"
                 />
@@ -416,7 +538,9 @@ export const BudgetEstimatorPage: React.FC = () => {
             {/* Popular models quick chips */}
             {popularModels[category] && (
               <div>
-                <span className="text-xs text-slate-400 block mb-2">Modelos habituales de {category}:</span>
+                <span className="text-xs text-slate-400 block mb-2">
+                  {isWebOrApp ? `Soluciones habituales de ${category}:` : `Modelos habituales de ${category}:`}
+                </span>
                 <div className="flex flex-wrap gap-2">
                   {popularModels[category].map((m) => (
                     <button
@@ -445,20 +569,20 @@ export const BudgetEstimatorPage: React.FC = () => {
               onClick={() => setStep(2)}
               className="px-6 py-3 rounded-xl bg-brand-green hover:bg-brand-green-neon text-black font-extrabold text-sm flex items-center gap-2 shadow-neon disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
-              <span>Continuar a la Avería</span>
+              <span>{isWebOrApp ? 'Continuar a Requisitos' : 'Continuar a la Avería'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>
       )}
 
-      {/* STEP 2: TIPO DE REPARACIÓN */}
+      {/* STEP 2: TIPO DE REPARACIÓN O DESARROLLO */}
       {step === 2 && (
         <div className="bg-brand-carbon/90 border border-brand-border rounded-2xl p-6 sm:p-8 shadow-card backdrop-blur-md animate-fadeIn">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-brand-green text-black text-xs font-black flex items-center justify-center">2</span>
-              <span>¿Qué necesita reparación en tu {model}?</span>
+              <span>{isWebOrApp ? `¿Qué alcance o requerimiento buscas para tu ${model}?` : `¿Qué necesita reparación en tu ${model}?`}</span>
             </h2>
             <button
               type="button"
@@ -466,11 +590,11 @@ export const BudgetEstimatorPage: React.FC = () => {
               className="text-xs text-slate-400 hover:text-white flex items-center gap-1"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Cambiar modelo</span>
+              <span>{isWebOrApp ? 'Cambiar tipo' : 'Cambiar modelo'}</span>
             </button>
           </div>
 
-          {/* Repair Options Grid */}
+          {/* Repair / Solution Options Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
             {repairOptions.map((opt) => {
               const isSelected = repairType === opt;
@@ -492,10 +616,10 @@ export const BudgetEstimatorPage: React.FC = () => {
             })}
           </div>
 
-          {/* Urgency Selector */}
+          {/* Urgency / Timeline Selector */}
           <div className="p-4 rounded-xl bg-brand-surface border border-brand-border/80 mb-6">
             <label className="block text-xs font-semibold text-slate-300 mb-2">
-              Prioridad de la reparación
+              {isWebOrApp ? 'Plazo de entrega y desarrollo' : 'Prioridad de la reparación'}
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
@@ -507,8 +631,12 @@ export const BudgetEstimatorPage: React.FC = () => {
                     : 'border-brand-border text-slate-400 hover:text-white'
                 }`}
               >
-                <div className="font-bold text-xs text-brand-green">Estándar (24 - 48h)</div>
-                <div className="text-[11px] text-slate-400">Sin recargo adicional</div>
+                <div className="font-bold text-xs text-brand-green">
+                  {isWebOrApp ? 'Plazo Normal de Desarrollo' : 'Estándar (24 - 48h)'}
+                </div>
+                <div className="text-[11px] text-slate-400">
+                  {isWebOrApp ? 'Entregas por fases y revisión continua' : 'Sin recargo adicional'}
+                </div>
               </button>
 
               <button
@@ -520,8 +648,12 @@ export const BudgetEstimatorPage: React.FC = () => {
                     : 'border-brand-border text-slate-400 hover:text-white'
                 }`}
               >
-                <div className="font-bold text-xs text-amber-400">⚡ Urgente Express (&lt; 3h)</div>
-                <div className="text-[11px] text-slate-400">Mano de obra preferente (+20 €)</div>
+                <div className="font-bold text-xs text-amber-400">
+                  {isWebOrApp ? '⚡ Entrega Express / Prioritaria' : '⚡ Urgente Express (< 3h)'}
+                </div>
+                <div className="text-[11px] text-slate-400">
+                  {isWebOrApp ? 'Dedicación full time prioritaria (+150 €)' : 'Mano de obra preferente (+20 €)'}
+                </div>
               </button>
             </div>
           </div>
@@ -529,13 +661,15 @@ export const BudgetEstimatorPage: React.FC = () => {
           {/* Details / Description */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">
-              Detalles adicionales del problema (opcional)
+              {isWebOrApp ? 'Detalles de tu proyecto o funcionalidades clave (opcional)' : 'Detalles adicionales del problema (opcional)'}
             </label>
             <textarea
               value={issueDescription}
               onChange={(e) => setIssueDescription(e.target.value)}
               rows={2}
-              placeholder="Explica qué síntomas notas: rayas en pantalla, táctil congelado, sonido metálico..."
+              placeholder={isWebOrApp 
+                ? 'Ej. Queremos pasarela Bizum y Stripe, formulario de reservas, multi-idioma...' 
+                : 'Explica qué síntomas notas: rayas en pantalla, táctil congelado, sonido metálico...'}
               className="w-full bg-brand-dark border border-brand-border rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-green resize-none"
             />
           </div>
@@ -575,8 +709,12 @@ export const BudgetEstimatorPage: React.FC = () => {
           <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
             <div className="text-xs text-amber-200/90 leading-relaxed">
-              <strong className="text-amber-300 font-bold block mb-0.5">Presupuesto Orientativo</strong>
-              Este cálculo se basa en el fallo descrito ({repairType}). Si al examinar físicamente el equipo en el taller se detectan daños internos adicionales (por ejemplo en placa base o humedad), se informará antes de realizar cualquier intervención.
+              <strong className="text-amber-300 font-bold block mb-0.5">
+                {isWebOrApp ? 'Presupuesto Estimado de Desarrollo' : 'Presupuesto Orientativo'}
+              </strong>
+              {isWebOrApp
+                ? `Cálculo orientativo según especificaciones (${repairType}). Incluye diseño, desarrollo de software, pruebas y despliegue. Tras solicitarlo nos pondremos en contacto para cerrar el alcance al detalle sin compromiso.`
+                : `Este cálculo se basa en el fallo descrito (${repairType}). Si al examinar físicamente el equipo en el taller se detectan daños internos adicionales (por ejemplo en placa base o humedad), se informará antes de realizar cualquier intervención.`}
             </div>
           </div>
 
@@ -584,8 +722,10 @@ export const BudgetEstimatorPage: React.FC = () => {
           <div className="p-4 rounded-xl bg-brand-surface border border-brand-border mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <span className="text-xs font-mono text-brand-green uppercase font-bold">{category}</span>
-              <h3 className="text-base font-bold text-white">{brand} {model}</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Intervención: {repairType}</p>
+              <h3 className="text-base font-bold text-white">{brand} — {model}</h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {isWebOrApp ? 'Solución:' : 'Intervención:'} {repairType}
+              </p>
             </div>
             <div className="text-right">
               <span className="text-xs text-slate-400 block">Tiempo estimado:</span>
@@ -606,16 +746,24 @@ export const BudgetEstimatorPage: React.FC = () => {
             <div className="p-4 space-y-3 text-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-white font-medium">Repuesto / Pieza:</span>
-                  <p className="text-xs text-slate-400">{repairType} calidad homologada</p>
+                  <span className="text-white font-medium">
+                    {isWebOrApp ? 'Infraestructura / Dominio / Servidores:' : 'Repuesto / Pieza:'}
+                  </span>
+                  <p className="text-xs text-slate-400">
+                    {isWebOrApp ? 'Configuración inicial y entorno de producción' : `${repairType} calidad homologada`}
+                  </p>
                 </div>
                 <span className="font-mono text-slate-200">{pricing.partCost.toFixed(2)} €</span>
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-white font-medium">Mano de obra especializada:</span>
-                  <p className="text-xs text-slate-400">Montaje, calibración y test de calidad</p>
+                  <span className="text-white font-medium">
+                    {isWebOrApp ? 'Desarrollo de Software y Diseño UI/UX:' : 'Mano de obra especializada:'}
+                  </span>
+                  <p className="text-xs text-slate-400">
+                    {isWebOrApp ? 'Programación completa, maquetación responsive y testing' : 'Montaje, calibración y test de calidad'}
+                  </p>
                 </div>
                 <span className="font-mono text-slate-200">{pricing.laborCost.toFixed(2)} €</span>
               </div>

@@ -11,13 +11,23 @@ import {
   Cpu, 
   Check, 
   ArrowRight,
-  Calculator
+  Calculator,
+  Globe,
+  Code
 } from 'lucide-react';
+import { DeviceCategory } from '../types';
 
 export const ServicesPage: React.FC = () => {
-  const categories = [
+  const categories: Array<{
+    title: string;
+    categoryKey?: DeviceCategory;
+    icon: any;
+    description: string;
+    items: Array<{ name: string; price: string; time: string }>;
+  }> = [
     {
       title: 'Reparación de Smartphones',
+      categoryKey: 'iPhone',
       icon: Smartphone,
       description: 'Especialistas en Apple iPhone, Samsung Galaxy, Xiaomi y las principales marcas del mercado.',
       items: [
@@ -31,6 +41,7 @@ export const ServicesPage: React.FC = () => {
     },
     {
       title: 'Portátiles y Laptops (Windows & Mac)',
+      categoryKey: 'Portátil',
       icon: Laptop,
       description: 'Mantenimiento térmico preventivo, optimización de velocidad y sustitución de piezas mecánicas.',
       items: [
@@ -44,6 +55,7 @@ export const ServicesPage: React.FC = () => {
     },
     {
       title: 'PC Sobremesa y Torres Gaming',
+      categoryKey: 'PC',
       icon: Monitor,
       description: 'Montaje de equipos a medida, diagnóstico de cuellos de botella y reparación de componentes.',
       items: [
@@ -57,6 +69,7 @@ export const ServicesPage: React.FC = () => {
     },
     {
       title: 'Software, Sistema y Seguridad',
+      categoryKey: 'Otro',
       icon: HardDrive,
       description: 'Solución a pantallazos azules, virus persistentes y pérdida de información confidencial.',
       items: [
@@ -66,6 +79,34 @@ export const ServicesPage: React.FC = () => {
         { name: 'Configuración de copias de seguridad en nube', price: 'Desde 30 €', time: '1-2 horas' },
         { name: 'Traspaso de datos móvil antiguo a nuevo', price: 'Desde 25 €', time: '1 hora' },
         { name: 'Reinstalación y puesta a punto macOS', price: '45 €', time: 'En el día' }
+      ]
+    },
+    {
+      title: 'Desarrollo Web Profesional y E-commerce',
+      categoryKey: 'Página Web',
+      icon: Globe,
+      description: 'Páginas web modernas, de carga ultra rápida, optimizadas para móviles y posicionamiento SEO en Google.',
+      items: [
+        { name: 'Landing Page de Captación / One-Page', price: 'Desde 290 €', time: '3-5 días' },
+        { name: 'Web Corporativa Profesional para Negocios', price: 'Desde 590 €', time: '7-12 días' },
+        { name: 'Tienda Online E-commerce (Stripe / Bizum)', price: 'Desde 990 €', time: '15-20 días' },
+        { name: 'Web a Medida + Panel Administrable', price: 'Desde 1.490 €', time: '2-3 semanas' },
+        { name: 'Mantenimiento Web Anual + Soporte Continuo', price: 'Desde 180 €/año', time: 'Inmediato' },
+        { name: 'Auditoría SEO Técnico y Velocidad Web', price: 'Desde 150 €', time: '48-72 horas' }
+      ]
+    },
+    {
+      title: 'Apps Móviles y Software a Medida',
+      categoryKey: 'App Móvil',
+      icon: Code,
+      description: 'Aplicaciones móviles para iOS y Android, portales web interactivos y software de gestión para empresas.',
+      items: [
+        { name: 'Web App Progresiva Multiplataforma (PWA)', price: 'Desde 790 €', time: '10-15 días' },
+        { name: 'App Móvil para iOS y Android (App Store / Play Store)', price: 'Desde 1.850 €', time: '3-4 semanas' },
+        { name: 'Software de Gestión / CRM / ERP a Medida', price: 'Desde 1.350 €', time: '2-3 semanas' },
+        { name: 'Portal Privado o Área de Clientes Online', price: 'Desde 950 €', time: '10-15 días' },
+        { name: 'Integración de Pasarelas, API y Base de Datos', price: 'Desde 390 €', time: '3-5 días' },
+        { name: 'Mantenimiento Evolutivo y Soporte de App', price: 'Desde 240 €/trim.', time: 'Continuo' }
       ]
     }
   ];
@@ -108,6 +149,7 @@ export const ServicesPage: React.FC = () => {
 
                 <Link
                   to="/presupuesto"
+                  state={{ category: cat.categoryKey }}
                   className="px-4 py-2 rounded-lg bg-brand-green/15 text-brand-green border border-brand-green/30 hover:bg-brand-green hover:text-black text-xs font-bold transition-all flex items-center gap-1.5 self-start sm:self-auto"
                 >
                   <Calculator className="w-3.5 h-3.5" />

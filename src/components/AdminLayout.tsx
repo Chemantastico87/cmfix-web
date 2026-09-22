@@ -17,9 +17,12 @@ import {
   ShieldCheck,
   Smartphone,
   KeyRound,
-  UserCog
+  UserCog,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -27,6 +30,7 @@ interface AdminLayoutProps {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const { user, logout, loading } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -72,13 +76,22 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       <aside className="hidden md:flex flex-col w-64 bg-brand-carbon border-r border-brand-border/80 shrink-0">
         
         {/* Brand header */}
-        <div className="p-5 border-b border-brand-border/60 flex items-center justify-between">
+        <div className="p-4 border-b border-brand-border/60 flex items-center justify-between">
           <Link to="/admin" className="flex items-center gap-3">
-            <img src="/cmfix-logo.png" alt="CM FIX" className="h-9 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+            <img src="/cmfix-logo.png" alt="CM FIX" className="h-8 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
           </Link>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-green/20 text-brand-green font-bold">
-            ADMIN
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white bg-brand-surface border border-brand-border transition-colors"
+              title={theme === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
+            >
+              {theme === 'dark' ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-sky-400" />}
+            </button>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-green/20 text-brand-green font-bold">
+              ADMIN
+            </span>
+          </div>
         </div>
 
         {/* User preview */}
@@ -145,6 +158,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </Link>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className="p-1.5 rounded-lg text-slate-300 hover:text-white bg-brand-surface border border-brand-border"
+            title={theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-sky-400" />}
+          </button>
           <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-brand-green/20 text-brand-green font-bold">
             ADMIN
           </span>

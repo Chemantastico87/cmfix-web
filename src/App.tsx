@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { InstallPrompt } from './components/InstallPrompt';
@@ -46,42 +47,44 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <AppLayout>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/servicios" element={<ServicesPage />} />
-            <Route path="/presupuesto" element={<BudgetEstimatorPage />} />
-            <Route path="/presupuesto/:id" element={<DigitalQuotePage />} />
-            <Route path="/seguimiento" element={<TrackingPage />} />
-            <Route path="/seguimiento/:id" element={<TrackingPage />} />
-            <Route path="/contacto" element={<ContactPage />} />
-            <Route path="/privacidad" element={<PrivacyPolicyPage />} />
-            <Route path="/cookies" element={<CookiesPage />} />
-            <Route path="/aviso-legal" element={<LegalNoticePage />} />
-            <Route path="/login" element={<LoginPage />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <AppLayout>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<HomePage />} />
+              <Route path="/servicios" element={<ServicesPage />} />
+              <Route path="/presupuesto" element={<BudgetEstimatorPage />} />
+              <Route path="/presupuesto/:id" element={<DigitalQuotePage />} />
+              <Route path="/seguimiento" element={<TrackingPage />} />
+              <Route path="/seguimiento/:id" element={<TrackingPage />} />
+              <Route path="/contacto" element={<ContactPage />} />
+              <Route path="/privacidad" element={<PrivacyPolicyPage />} />
+              <Route path="/cookies" element={<CookiesPage />} />
+              <Route path="/aviso-legal" element={<LegalNoticePage />} />
+              <Route path="/login" element={<LoginPage />} />
 
-            {/* Admin Protected Routes */}
-            <Route path="/admin" element={<AdminDashboardPage />} />
-            <Route path="/admin/reparaciones" element={<AdminRepairsPage />} />
-            <Route path="/admin/presupuestos" element={<AdminQuotesPage />} />
-            <Route path="/admin/clientes" element={<AdminCustomersPage />} />
-            <Route path="/admin/inventario" element={<AdminInventoryPage />} />
-            <Route path="/admin/proveedores" element={<AdminSuppliersPage />} />
-            <Route path="/admin/precios" element={<AdminPricingCatalogPage />} />
-            <Route path="/admin/usuarios" element={<AdminUsersPage />} />
-            <Route path="/admin/configuracion" element={<AdminSettingsPage />} />
-            <Route path="/admin/seguridad" element={<AdminSecurityPage />} />
-            <Route path="/admin/perfil" element={<AdminSecurityPage />} />
+              {/* Admin Protected Routes */}
+              <Route path="/admin" element={<AdminDashboardPage />} />
+              <Route path="/admin/reparaciones" element={<AdminRepairsPage />} />
+              <Route path="/admin/presupuestos" element={<AdminQuotesPage />} />
+              <Route path="/admin/clientes" element={<AdminCustomersPage />} />
+              <Route path="/admin/inventario" element={<AdminInventoryPage />} />
+              <Route path="/admin/proveedores" element={<AdminSuppliersPage />} />
+              <Route path="/admin/precios" element={<AdminPricingCatalogPage />} />
+              <Route path="/admin/usuarios" element={<AdminUsersPage />} />
+              <Route path="/admin/configuracion" element={<AdminSettingsPage />} />
+              <Route path="/admin/seguridad" element={<AdminSecurityPage />} />
+              <Route path="/admin/perfil" element={<AdminSecurityPage />} />
 
-            {/* Fallback route */}
-            <Route path="*" element={<HomePage />} />
-          </Routes>
-        </AppLayout>
-      </BrowserRouter>
-    </AuthProvider>
+              {/* Fallback route */}
+              <Route path="*" element={<HomePage />} />
+            </Routes>
+          </AppLayout>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 

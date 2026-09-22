@@ -11,14 +11,18 @@ import {
   LayoutDashboard,
   Smartphone,
   Lock,
-  LogOut
+  LogOut,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const isActive = (path: string) => {
     if (path === '/' && location.pathname === '/') return true;
@@ -67,6 +71,19 @@ export const Navbar: React.FC = () => {
 
           {/* Desktop Action Buttons */}
           <div className="hidden md:flex items-center space-x-3">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg text-slate-300 hover:text-white bg-brand-surface/80 border border-brand-border hover:border-brand-green/40 transition-all flex items-center justify-center"
+              title={theme === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
+              aria-label="Alternar tema claro y oscuro"
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-4 h-4 text-amber-400 animate-in spin-in-90 duration-200" />
+              ) : (
+                <Moon className="w-4 h-4 text-sky-500 animate-in spin-in-90 duration-200" />
+              )}
+            </button>
+
             <Link
               to="/seguimiento"
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:text-white bg-brand-surface/80 border border-brand-border hover:border-brand-green/50 transition-all duration-200"
@@ -116,6 +133,18 @@ export const Navbar: React.FC = () => {
 
           {/* Mobile menu button */}
           <div className="flex md:hidden items-center space-x-2">
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 rounded-lg text-slate-300 hover:text-white bg-brand-surface border border-brand-border"
+              title={theme === 'dark' ? 'Modo Claro' : 'Modo Oscuro'}
+            >
+              {theme === 'dark' ? (
+                <Sun className="w-4 h-4 text-amber-400" />
+              ) : (
+                <Moon className="w-4 h-4 text-sky-500" />
+              )}
+            </button>
+
             <Link
               to="/presupuesto"
               className="px-3 py-1.5 rounded-lg text-xs font-bold text-black bg-brand-green shadow-neon"

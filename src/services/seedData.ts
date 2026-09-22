@@ -278,6 +278,73 @@ export const INITIAL_PRICING_CATALOG: PricingCatalogItem[] = [
     margin: 20.00,
     estimated_time: '24 horas',
     supplier_ref: 'SSD-CRU-1TB'
+  },
+  // Desarrollo Web
+  {
+    id: 'pr-11',
+    category: 'Página Web',
+    brand: 'Desarrollo Web',
+    model: 'Landing Page / One-Page',
+    repair_type: 'Landing Page de Alta Conversión',
+    part_cost: 50.00,
+    labor_cost: 240.00,
+    sale_price: 290.00,
+    margin: 0.00,
+    estimated_time: '3-5 días laborables',
+    notes: 'Diseño responsive adaptado a móvil, formulario de captación, integración con WhatsApp y analítica'
+  },
+  {
+    id: 'pr-12',
+    category: 'Página Web',
+    brand: 'Desarrollo Web',
+    model: 'Web Corporativa Profesional',
+    repair_type: 'Desarrollo completo desde cero + Dominio + SSL',
+    part_cost: 90.00,
+    labor_cost: 500.00,
+    sale_price: 590.00,
+    margin: 0.00,
+    estimated_time: '7-12 días laborables',
+    notes: 'Hasta 5 secciones, panel WordPress/Custom, certificado SSL y optimización SEO en Google'
+  },
+  {
+    id: 'pr-13',
+    category: 'Página Web',
+    brand: 'Desarrollo Web',
+    model: 'Tienda Online / E-commerce',
+    repair_type: 'Tienda Online E-commerce',
+    part_cost: 150.00,
+    labor_cost: 840.00,
+    sale_price: 990.00,
+    margin: 0.00,
+    estimated_time: '15-20 días laborables',
+    notes: 'Catálogo de productos, pasarela Stripe/Redsýs/Bizum, cálculo automático de envíos y factura'
+  },
+  // Desarrollo App Móvil & Software
+  {
+    id: 'pr-14',
+    category: 'App Móvil',
+    brand: 'Desarrollo App / Software',
+    model: 'Web App / PWA Multiplataforma',
+    repair_type: 'Web App Progresiva (PWA)',
+    part_cost: 100.00,
+    labor_cost: 690.00,
+    sale_price: 790.00,
+    margin: 0.00,
+    estimated_time: '10-15 días laborables',
+    notes: 'Instalable en cualquier móvil sin pasar por tiendas, funciona offline y envía notificaciones push'
+  },
+  {
+    id: 'pr-15',
+    category: 'App Móvil',
+    brand: 'Desarrollo App / Software',
+    model: 'App Móvil Nativa (iOS & Android)',
+    repair_type: 'Desarrollo de App a Medida + Base de Datos',
+    part_cost: 250.00,
+    labor_cost: 1600.00,
+    sale_price: 1850.00,
+    margin: 0.00,
+    estimated_time: '3-4 semanas',
+    notes: 'Publicación en Google Play Store y Apple App Store, backend en la nube y panel administrativo'
   }
 ];
 

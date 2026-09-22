@@ -15,6 +15,7 @@ import {
   Settings, 
   Globe, 
   Cpu,
+  Code,
   ArrowRight,
   CheckCircle2,
   ChevronRight,
@@ -51,10 +52,10 @@ export const HomePage: React.FC = () => {
     { icon: Smartphone, name: 'Móviles', desc: 'Pantallas OLED, baterías, conectores de carga y microelectrónica.' },
     { icon: Monitor, name: 'Ordenadores PC', desc: 'Montaje gaming, formateo, eliminación de virus y fallos de hardware.' },
     { icon: Laptop, name: 'Portátiles', desc: 'Cambio de pasta térmica, teclados, bisagras y ampliación NVMe.' },
+    { icon: Globe, name: 'Páginas Web', desc: 'Webs corporativas, landing pages y tiendas online con pasarela Bizum y Stripe.' },
+    { icon: Code, name: 'Apps & Software', desc: 'Aplicaciones móviles iOS/Android, portales de clientes y software de gestión a medida.' },
     { icon: Tablet, name: 'Tablets / iPad', desc: 'Digitalizadores, baterías y conectores de carga para iPad y Android.' },
-    { icon: Wrench, name: 'Reparaciones Express', desc: 'Diagnóstico en el acto e intervenciones de urgencia en < 2 horas.' },
-    { icon: Settings, name: 'Mantenimiento', desc: 'Limpieza por ultrasonidos, reballing y sustitución de pasta térmica.' },
-    { icon: Globe, name: 'Servicios Informáticos', desc: 'Configuración de redes, copias de seguridad y asistencia remota.' },
+    { icon: Wrench, name: 'Reparaciones Express', desc: 'Diagnóstico en el acto e intervenciones de urgencia en el día.' },
     { icon: HardDrive, name: 'Software y SO', desc: 'Instalación limpia de Windows 11/10, macOS, Linux y recuperación de datos.' }
   ];
 
@@ -193,6 +194,16 @@ export const HomePage: React.FC = () => {
                     else if (cat === 'Samsung') setQuickBrand('Samsung');
                     else if (cat === 'Xiaomi') setQuickBrand('Xiaomi');
                     else if (cat === 'Mac') setQuickBrand('Apple');
+                    else if (cat === 'Página Web') {
+                      setQuickBrand('Desarrollo Web');
+                      setQuickModel('Web Corporativa');
+                      setQuickIssue('Desarrollo completo desde cero + Dominio + SSL');
+                    }
+                    else if (cat === 'App Móvil') {
+                      setQuickBrand('Desarrollo Software');
+                      setQuickModel('App iOS & Android');
+                      setQuickIssue('Desarrollo de App a Medida + Base de Datos');
+                    }
                     else setQuickBrand('');
                   }}
                   className="w-full bg-brand-dark border border-brand-border rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-brand-green transition-colors"
@@ -206,6 +217,8 @@ export const HomePage: React.FC = () => {
                   <option value="Mac">Mac / MacBook</option>
                   <option value="Tablet">Tablet / iPad</option>
                   <option value="Consola">Consola (PlayStation, Nintendo, Xbox)</option>
+                  <option value="Página Web">🌐 Página Web / E-commerce (Nuevo)</option>
+                  <option value="App Móvil">📱 App Móvil & Software a Medida (Nuevo)</option>
                   <option value="Otro">Otro Dispositivo</option>
                 </select>
               </div>

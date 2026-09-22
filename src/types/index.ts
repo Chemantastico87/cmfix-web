@@ -8,6 +8,8 @@ export type DeviceCategory =
   | 'Mac'
   | 'Tablet'
   | 'Consola'
+  | 'Página Web'
+  | 'App Móvil'
   | 'Otro';
 
 export type RepairStatus =
