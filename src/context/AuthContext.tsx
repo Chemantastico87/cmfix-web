@@ -61,19 +61,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
   }, []);
 
-  const login = async (email: string, pass: string, demoRole: UserRole = 'ADMIN'): Promise<{ success: boolean; error?: string }> => {
+  const login = async (inputUser: string, pass: string): Promise<{ success: boolean; error?: string }> => {
     setLoading(true);
+    const cleanUser = (inputUser || '').trim().toLowerCase();
+    const cleanPass = (pass || '').trim();
+
     try {
+      // 1. If Supabase is connected, try Supabase Auth first
       if (isSupabaseConfigured && supabase) {
         const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password: pass
+          email: cleanUser,
+          password: cleanPass
         });
-        if (error) {
-          setLoading(false);
-          return { success: false, error: error.message };
-        }
-        if (data.user) {
+        if (!error && data.user) {
           const { data: profile } = await supabase
             .from('profiles')
             .select('*')
@@ -82,27 +82,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           const authUser: AuthUser = {
             id: data.user.id,
-            email: data.user.email || email,
-            name: profile?.full_name || 'Técnico CM FIX',
+            email: data.user.email || cleanUser,
+            name: profile?.full_name || (cleanUser.includes('maury') ? 'Maury (Administrador)' : 'Técnico CM FIX'),
             role: (profile?.role as UserRole) || 'ADMIN'
           };
           setUser(authUser);
+          localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(authUser));
           setLoading(false);
           return { success: true };
         }
       }
 
-      // Local / Demo mode login
-      const mockUser: AuthUser = {
-        id: 'user-' + Date.now(),
-        email: email || 'cmfixespana@gmail.com',
-        name: demoRole === 'ADMIN' ? 'Maury (Administrador)' : 'Maury (Técnico CM FIX)',
-        role: demoRole
-      };
-      setUser(mockUser);
-      localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(mockUser));
+      // 2. Validate official CM FIX credentials
+      // A) MAURY (ADMIN)
+      const isMaury = cleanUser === 'maury@cmfix.es' || cleanUser === 'cmfixespana@gmail.com' || cleanUser === 'maury' || cleanUser === 'chema@chemamauri.com' || cleanUser === 'mauri@chemamauri.com';
+      const isMauryPass = cleanPass === 'mauri123' || cleanPass === 'MauryFix2026!' || cleanPass === 'chema123' || cleanPass === 'admin';
+
+      if (isMaury && isMauryPass) {
+        const adminUser: AuthUser = {
+          id: 'admin-maury',
+          email: 'cmfixespana@gmail.com',
+          name: 'Maury (Administrador)',
+          role: 'ADMIN'
+        };
+        setUser(adminUser);
+        localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(adminUser));
+        setLoading(false);
+        return { success: true };
+      }
+
+      // B) TECNICO TALLER
+      const isTecnico = cleanUser === 'tecnico@cmfix.es' || cleanUser === 'taller@cmfix.es' || cleanUser === 'tecnico';
+      const isTecnicoPass = cleanPass === 'tecnico123' || cleanPass === 'TecnicoFix2026!' || cleanPass === 'taller';
+
+      if (isTecnico && isTecnicoPass) {
+        const techUser: AuthUser = {
+          id: 'tech-cmfix',
+          email: 'tecnico@cmfix.es',
+          name: 'Técnico Taller CM FIX',
+          role: 'TECNICO'
+        };
+        setUser(techUser);
+        localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(techUser));
+        setLoading(false);
+        return { success: true };
+      }
+
+      // If credentials do not match
       setLoading(false);
-      return { success: true };
+      return { 
+        success: false, 
+        error: 'Usuario o contraseña incorrectos. Por favor, introduzca las credenciales asignadas para Maury o Técnico.' 
+      };
     } catch (err: any) {
       setLoading(false);
       return { success: false, error: err.message || 'Error al iniciar sesión' };

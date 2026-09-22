@@ -51,15 +51,37 @@ function setLocal<T>(key: string, value: T): void {
 }
 
 export function initLocalDatabase(force = false) {
-  if (force || !localStorage.getItem(STORAGE_KEYS.SETTINGS)) {
+  const existingSettings = getLocal<CompanySettings | null>(STORAGE_KEYS.SETTINGS, null);
+  // Auto-upgrade if previous session had old Madrid address or old placeholder phone
+  const needsSettingsUpgrade = force || !existingSettings || 
+    existingSettings.address?.includes('Madrid') || 
+    existingSettings.city?.includes('Madrid') ||
+    existingSettings.phone?.includes('624 89 20 41') ||
+    existingSettings.phone?.includes('600 000 000');
+
+  if (needsSettingsUpgrade) {
     setLocal(STORAGE_KEYS.SETTINGS, INITIAL_COMPANY_SETTINGS);
+  }
+
+  // Check if customers/repairs contain old Madrid demo data ("Alejandro Serrano")
+  const existingCustomers = getLocal<Customer[]>(STORAGE_KEYS.CUSTOMERS, []);
+  if (existingCustomers.some(c => c.name?.includes('Alejandro Serrano') || c.address?.includes('Madrid'))) {
+    setLocal(STORAGE_KEYS.CUSTOMERS, []);
+    setLocal(STORAGE_KEYS.QUOTES, []);
+    setLocal(STORAGE_KEYS.REPAIRS, []);
+  }
+
+  if (!localStorage.getItem(STORAGE_KEYS.SUPPLIERS)) {
     setLocal(STORAGE_KEYS.SUPPLIERS, INITIAL_SUPPLIERS);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.INVENTORY)) {
     setLocal(STORAGE_KEYS.INVENTORY, INITIAL_INVENTORY);
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.PRICING)) {
     setLocal(STORAGE_KEYS.PRICING, INITIAL_PRICING_CATALOG);
-    setLocal(STORAGE_KEYS.CUSTOMERS, INITIAL_CUSTOMERS);
-    setLocal(STORAGE_KEYS.QUOTES, INITIAL_QUOTES);
-    setLocal(STORAGE_KEYS.REPAIRS, INITIAL_REPAIRS);
-    setLocal(STORAGE_KEYS.SEQ, 4); // Next sequence will be 4
+  }
+  if (!localStorage.getItem(STORAGE_KEYS.SEQ)) {
+    setLocal(STORAGE_KEYS.SEQ, 1);
   }
 }
 
@@ -67,7 +89,7 @@ export function initLocalDatabase(force = false) {
 initLocalDatabase(false);
 
 function getNextCode(prefix = 'CMF'): string {
-  const current = getLocal<number>(STORAGE_KEYS.SEQ, 4);
+  const current = getLocal<number>(STORAGE_KEYS.SEQ, 1);
   const next = current + 1;
   setLocal(STORAGE_KEYS.SEQ, next);
   const year = new Date().getFullYear();
@@ -76,13 +98,56 @@ function getNextCode(prefix = 'CMF'): string {
 }
 
 export const dbService = {
+  // --- Clean Workshop Helper ---
+  resetToCleanWorkshop(): void {
+    setLocal(STORAGE_KEYS.SETTINGS, INITIAL_COMPANY_SETTINGS);
+    setLocal(STORAGE_KEYS.CUSTOMERS, []);
+    setLocal(STORAGE_KEYS.QUOTES, []);
+    setLocal(STORAGE_KEYS.REPAIRS, []);
+    setLocal(STORAGE_KEYS.SEQ, 1);
+  },
+
   // --- Company Settings ---
   async getCompanySettings(): Promise<CompanySettings> {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.from('company_settings').select('*').single();
-      if (!error && data) return data as CompanySettings;
+      if (!error && data) {
+        // If Supabase has old Madrid data, normalize with our official settings
+        if (data.address?.includes('Madrid') || data.phone?.includes('600 000 000') || data.phone?.includes('624 89 20 41')) {
+          const updated = {
+            ...data,
+            phone: INITIAL_COMPANY_SETTINGS.phone,
+            whatsapp: INITIAL_COMPANY_SETTINGS.whatsapp,
+            email: INITIAL_COMPANY_SETTINGS.email,
+            address: INITIAL_COMPANY_SETTINGS.address,
+            city: INITIAL_COMPANY_SETTINGS.city,
+            trade_name: INITIAL_COMPANY_SETTINGS.trade_name
+          };
+          // Try to update Supabase remote row
+          try {
+            await supabase.from('company_settings').update({
+              phone: INITIAL_COMPANY_SETTINGS.phone,
+              whatsapp: INITIAL_COMPANY_SETTINGS.whatsapp,
+              email: INITIAL_COMPANY_SETTINGS.email,
+              address: INITIAL_COMPANY_SETTINGS.address,
+              city: INITIAL_COMPANY_SETTINGS.city,
+              trade_name: INITIAL_COMPANY_SETTINGS.trade_name
+            }).eq('id', 1);
+          } catch (e) {
+            console.warn('Could not auto-update remote company_settings:', e);
+          }
+          setLocal(STORAGE_KEYS.SETTINGS, updated);
+          return updated as CompanySettings;
+        }
+        return data as CompanySettings;
+      }
     }
-    return getLocal<CompanySettings>(STORAGE_KEYS.SETTINGS, INITIAL_COMPANY_SETTINGS);
+    const local = getLocal<CompanySettings>(STORAGE_KEYS.SETTINGS, INITIAL_COMPANY_SETTINGS);
+    if (local.address?.includes('Madrid') || local.phone?.includes('600 000 000')) {
+      setLocal(STORAGE_KEYS.SETTINGS, INITIAL_COMPANY_SETTINGS);
+      return INITIAL_COMPANY_SETTINGS;
+    }
+    return local;
   },
 
   async updateCompanySettings(settings: Partial<CompanySettings>): Promise<CompanySettings> {

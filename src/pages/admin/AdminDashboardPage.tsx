@@ -176,9 +176,9 @@ export const AdminDashboardPage: React.FC = () => {
               <Wrench className="w-4 h-4 text-brand-green" />
             </div>
             <div className="mt-3 text-2xl sm:text-3xl font-black text-white font-mono">
-              {(stats?.in_progress_repairs_count || 0) + (stats?.ready_repairs_count || 0) + 12}
+              {(stats?.in_progress_repairs_count || 0) + (stats?.ready_repairs_count || 0)}
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">Activas e históricas</p>
+            <p className="text-[11px] text-slate-500 mt-1">Activas en taller</p>
           </div>
 
           <div className="p-5 rounded-2xl bg-brand-carbon border border-brand-border/80 shadow-card">
@@ -187,9 +187,9 @@ export const AdminDashboardPage: React.FC = () => {
               <Users className="w-4 h-4 text-blue-400" />
             </div>
             <div className="mt-3 text-2xl sm:text-3xl font-black text-white font-mono">
-              {(stats?.total_customers_count || 0) + 81}
+              {stats?.total_customers_count || 0}
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">Base de clientes activos</p>
+            <p className="text-[11px] text-slate-500 mt-1">Base de clientes registrados</p>
           </div>
 
           <div className="p-5 rounded-2xl bg-brand-carbon border border-brand-border/80 shadow-card">
@@ -198,9 +198,9 @@ export const AdminDashboardPage: React.FC = () => {
               <Euro className="w-4 h-4 text-brand-green" />
             </div>
             <div className="mt-3 text-2xl sm:text-3xl font-black text-brand-green font-mono">
-              {((stats?.total_revenue || 0) + 2450).toFixed(2)} €
+              {(stats?.total_revenue || 0).toFixed(2)} €
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">Ingresos brutos</p>
+            <p className="text-[11px] text-slate-500 mt-1">Ingresos de reparaciones</p>
           </div>
 
           <div className="p-5 rounded-2xl bg-brand-carbon border border-brand-border/80 shadow-card">
@@ -209,9 +209,9 @@ export const AdminDashboardPage: React.FC = () => {
               <TrendingUp className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="mt-3 text-2xl sm:text-3xl font-black text-emerald-400 font-mono">
-              {((stats?.total_profit || 0) + 1380).toFixed(2)} €
+              {(stats?.total_profit || 0).toFixed(2)} €
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">Margen tras repuestos</p>
+            <p className="text-[11px] text-slate-500 mt-1">Margen neto de taller</p>
           </div>
 
         </div>
