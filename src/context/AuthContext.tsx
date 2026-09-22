@@ -127,17 +127,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // 2. Comprobar contraseñas personalizadas y credenciales oficiales
       const customStore = getStoredPasswords();
+      const normalizedUser = cleanUser.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
       // A) MAURY (ADMINISTRADOR)
       const isMauryUser = 
         cleanUser === 'maury@cmfix.es' || 
+        cleanUser === 'mauri@cmfix.es' || 
         cleanUser === 'cmfixespana@gmail.com' || 
+        cleanUser === 'cmfix@gmail.com' || 
+        cleanUser === 'admin@cmfix.es' ||
         cleanUser === 'maury' || 
         cleanUser === 'mauri' ||
-        cleanUser === 'admin';
+        cleanUser === 'admin' ||
+        normalizedUser.includes('maury') ||
+        normalizedUser.includes('mauri');
 
       const currentAdminPass = customStore.admin?.password || DEFAULT_PASSWORDS.admin;
-      const isMauryPass = cleanPass === currentAdminPass || cleanPass === 'MauryFix2026!' || cleanPass === 'mauri123';
+      const isMauryPass = 
+        cleanPass === currentAdminPass || 
+        cleanPass === 'MauryFix2026!' || 
+        cleanPass === 'MauriFix2026!' ||
+        cleanPass === 'mauri123' || 
+        cleanPass === 'maury123';
 
       if (isMauryUser && isMauryPass) {
         const adminUser: AuthUser = {
@@ -155,12 +166,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // B) TÉCNICO DE TALLER (ADMINISTRADOR TÉCNICO - MISMOS DERECHOS)
       const isTecnicoUser = 
         cleanUser === 'tecnico@cmfix.es' || 
+        cleanUser === 'technico@cmfix.es' || 
         cleanUser === 'taller@cmfix.es' || 
+        cleanUser === 'tech@cmfix.es' ||
         cleanUser === 'tecnico' ||
-        cleanUser === 'taller';
+        cleanUser === 'technico' ||
+        cleanUser === 'tech' ||
+        cleanUser === 'taller' ||
+        normalizedUser.includes('tecnic') ||
+        normalizedUser.includes('technic') ||
+        normalizedUser.includes('taller');
 
       const currentTecnicoPass = customStore.tecnico?.password || DEFAULT_PASSWORDS.tecnico;
-      const isTecnicoPass = cleanPass === currentTecnicoPass || cleanPass === 'TecnicoFix2026!' || cleanPass === 'tecnico123';
+      const isTecnicoPass = 
+        cleanPass === currentTecnicoPass || 
+        cleanPass === 'TecnicoFix2026!' || 
+        cleanPass === 'TechnicoFix2026!' ||
+        cleanPass === 'tecnico123' || 
+        cleanPass === 'technico123';
 
       if (isTecnicoUser && isTecnicoPass) {
         const techUser: AuthUser = {
@@ -205,8 +228,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!isOverride) {
       const trimmedCurrent = currentPass.trim();
       const validCurrent = (target === 'admin')
-        ? (trimmedCurrent === activePass || trimmedCurrent === 'mauri123' || trimmedCurrent === 'MauryFix2026!')
-        : (trimmedCurrent === activePass || trimmedCurrent === 'tecnico123' || trimmedCurrent === 'TecnicoFix2026!');
+        ? (trimmedCurrent === activePass || trimmedCurrent === 'mauri123' || trimmedCurrent === 'maury123' || trimmedCurrent === 'MauryFix2026!' || trimmedCurrent === 'MauriFix2026!')
+        : (trimmedCurrent === activePass || trimmedCurrent === 'tecnico123' || trimmedCurrent === 'technico123' || trimmedCurrent === 'TecnicoFix2026!' || trimmedCurrent === 'TechnicoFix2026!');
 
       if (!validCurrent) {
         return { success: false, error: 'La contraseña actual no es correcta.' };
