@@ -4,9 +4,6 @@ export interface NotificationSettings {
   mauryName: string;
   mauryPhone: string;
   mauryEmail: string;
-  eliName: string;
-  eliPhone: string;
-  eliEmail: string;
   soundEnabled: boolean;
   systemNotificationsEnabled: boolean;
   autoOpenWhatsApp: boolean;
@@ -33,9 +30,6 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   mauryName: 'Maury (Administrador)',
   mauryPhone: '+34 661 99 10 60',
   mauryEmail: 'cmfixespana@gmail.com',
-  eliName: 'Eli (Técnico Creador)',
-  eliPhone: '+34 661 99 10 60', // Puede configurarse por Eli en ajustes
-  eliEmail: 'tecnico@cmfix.es',
   soundEnabled: true,
   systemNotificationsEnabled: true,
   autoOpenWhatsApp: false
@@ -172,13 +166,11 @@ export function showSystemNotification(title: string, body: string, data?: any):
   }
 }
 
-// Generador de enlaces directos para avisar por WhatsApp a Maury o a Eli
-export function getWhatsAppNotificationUrl(target: 'maury' | 'eli' | string, quote: Quote): string {
+// Generador de enlaces directos para avisar por WhatsApp a Maury (Taller CM FIX)
+export function getWhatsAppNotificationUrl(target: 'maury' | string = 'maury', quote: Quote): string {
   const settings = getNotificationSettings();
   let rawPhone = target === 'maury' 
     ? settings.mauryPhone 
-    : target === 'eli' 
-    ? settings.eliPhone 
     : target;
 
   const cleanPhone = (rawPhone || '').replace(/\D+/g, '');

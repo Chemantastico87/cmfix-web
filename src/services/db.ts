@@ -544,7 +544,7 @@ export const dbService = {
     const current = getLocal<Quote[]>(STORAGE_KEYS.QUOTES, INITIAL_QUOTES);
     setLocal(STORAGE_KEYS.QUOTES, [newQuote, ...current]);
 
-    // Disparar notificación acústica, visual y de sistema para Maury y Eli
+    // Disparar notificación acústica, visual y de sistema para el taller
     try {
       notifyNewQuote(newQuote);
     } catch (notifErr) {

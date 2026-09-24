@@ -38,7 +38,7 @@ export const NotificationPrompt: React.FC = () => {
     if (permission === 'granted') {
       showSystemNotification(
         '🔔 ¡Notificaciones de CM FIX Activadas!',
-        'A partir de ahora recibirás avisos sonoros y en pantalla cuando entre un nuevo presupuesto para Maury y Eli.'
+        'A partir de ahora recibirás avisos sonoros y en pantalla cuando entre un nuevo presupuesto en el taller.'
       );
       setStatusMessage('¡Notificaciones y sonido activados correctamente!');
     } else {
@@ -68,7 +68,7 @@ export const NotificationPrompt: React.FC = () => {
           </div>
           <div>
             <h4 className="font-extrabold text-xs sm:text-sm text-white flex items-center gap-1.5">
-              <span>Activar Notificaciones de Presupuestos (Maury y Eli)</span>
+              <span>Activar Notificaciones de Presupuestos (Taller CM FIX)</span>
               <span className="px-2 py-0.5 rounded-full bg-brand-green/20 text-brand-green font-mono text-[10px]">
                 RECOMENDADO
               </span>

@@ -81,7 +81,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
     { label: 'Reparaciones', path: '/admin/reparaciones', icon: Wrench },
     { label: 'Presupuestos', path: '/admin/presupuestos', icon: FileText },
-    { label: 'Notificaciones Maury/Eli', path: '/admin/configuracion', icon: Bell },
+    { label: 'Notificaciones Taller', path: '/admin/configuracion', icon: Bell },
     { label: 'Clientes', path: '/admin/clientes', icon: Users },
     { label: 'Inventario / Piezas', path: '/admin/inventario', icon: Package },
     { label: 'Proveedores', path: '/admin/proveedores', icon: Truck },
@@ -341,7 +341,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   ? 'bg-brand-green/20 border-brand-green text-brand-green shadow-neon animate-pulse'
                   : 'bg-brand-surface border-brand-border text-slate-200 hover:text-white hover:border-brand-green/50'
               }`}
-              title="Avisos y Notificaciones de Presupuestos (Maury y Eli)"
+              title="Avisos y Notificaciones de Presupuestos (Taller CM FIX)"
             >
               <Bell className="w-4 h-4 text-brand-green" />
               <span className="text-xs font-black">Avisos Presupuestos</span>

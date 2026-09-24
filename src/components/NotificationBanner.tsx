@@ -38,7 +38,6 @@ export const NotificationBanner: React.FC = () => {
   if (!activeQuote) return null;
 
   const mauryWaUrl = getWhatsAppNotificationUrl('maury', activeQuote);
-  const eliWaUrl = getWhatsAppNotificationUrl('eli', activeQuote);
 
   return (
     <div className="fixed top-4 right-4 z-50 max-w-md w-[calc(100vw-2rem)] sm:w-96 animate-bounce-short shadow-neon-strong">
@@ -107,34 +106,18 @@ export const NotificationBanner: React.FC = () => {
           </div>
         </div>
 
-        {/* Action Buttons for Maury and Eli */}
+        {/* Action Button for Maury */}
         <div className="space-y-2">
-          <div className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-brand-green" />
-            <span>Avisar de inmediato por WhatsApp:</span>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-2">
-            <a
-              href={mauryWaUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[11px] shadow-sm transition-all"
-            >
-              <MessageCircle className="w-3.5 h-3.5" />
-              <span>Avisar a Maury</span>
-            </a>
-
-            <a
-              href={eliWaUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-[11px] shadow-sm transition-all"
-            >
-              <MessageCircle className="w-3.5 h-3.5" />
-              <span>Avisar a Eli</span>
-            </a>
-          </div>
+          <a
+            href={mauryWaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-neon transition-all"
+            title="Avisar a Maury (+34 661 99 10 60)"
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span>Avisar a Maury por WhatsApp</span>
+          </a>
 
           <div className="pt-1 flex items-center justify-between gap-2">
             <Link

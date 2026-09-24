@@ -244,18 +244,9 @@ export const AdminQuotesPage: React.FC = () => {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-1.5 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-400 hover:text-emerald-200 border border-emerald-500/40 transition-colors"
-                          title="Avisar a Maury por WhatsApp"
+                          title="Avisar a Maury por WhatsApp (+34 661 99 10 60)"
                         >
                           <MessageCircle className="w-3.5 h-3.5" />
-                        </a>
-                        <a
-                          href={getWhatsAppNotificationUrl('eli', q)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-1.5 rounded-lg bg-teal-950/60 hover:bg-teal-900/80 text-teal-400 hover:text-teal-200 border border-teal-500/40 transition-colors"
-                          title="Avisar a Eli por WhatsApp"
-                        >
-                          <Bell className="w-3.5 h-3.5" />
                         </a>
                         <button
                           onClick={() => handleDownloadPDF(q)}

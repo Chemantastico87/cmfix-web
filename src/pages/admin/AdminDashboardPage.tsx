@@ -54,7 +54,7 @@ export const AdminDashboardPage: React.FC = () => {
     if (perm === 'granted') {
       showSystemNotification(
         '🔔 CM FIX: ¡Notificaciones Activas!',
-        'Avisos configurados correctamente para Maury y Eli.'
+        'Avisos de presupuestos configurados correctamente para el taller CM FIX.'
       );
     }
     setTestSuccess(true);
@@ -134,7 +134,7 @@ export const AdminDashboardPage: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-sm sm:text-base font-black text-white">
-                    Notificaciones de Presupuestos (Maury y Eli)
+                    Notificaciones de Presupuestos (Taller CM FIX)
                   </h2>
                   <span className="px-2 py-0.5 rounded-full bg-brand-green/20 text-brand-green text-[10px] font-mono font-black border border-brand-green/40">
                     EN VIVO
@@ -188,14 +188,10 @@ export const AdminDashboardPage: React.FC = () => {
           )}
 
           {/* Sub-barra de canales activos */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-brand-border/40 text-[11px]">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-brand-border/40 text-[11px]">
             <div className="bg-brand-dark/50 p-2 rounded-lg border border-brand-border/30">
-              <span className="text-slate-400 block">Canal Maury:</span>
+              <span className="text-slate-400 block">Canal WhatsApp Maury:</span>
               <span className="font-mono font-bold text-emerald-300 truncate block">{notifSettings.mauryPhone}</span>
-            </div>
-            <div className="bg-brand-dark/50 p-2 rounded-lg border border-brand-border/30">
-              <span className="text-slate-400 block">Canal Eli:</span>
-              <span className="font-mono font-bold text-teal-300 truncate block">{notifSettings.eliPhone || 'Configurado'}</span>
             </div>
             <div className="bg-brand-dark/50 p-2 rounded-lg border border-brand-border/30">
               <span className="text-slate-400 block">Campana Sonora:</span>

@@ -76,7 +76,7 @@ export const AdminSettingsPage: React.FC = () => {
     if (perm === 'granted') {
       showSystemNotification(
         '🔔 Prueba CM FIX: ¡Alerta de Presupuesto!',
-        'Notificación de prueba activa para Maury y Eli. El sistema sonoro y visual funciona correctamente.'
+        'Notificación de prueba activa para el taller CM FIX (Maury). El sistema sonoro y visual funciona correctamente.'
       );
     }
 
@@ -336,7 +336,7 @@ export const AdminSettingsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Section 4: Centro de Notificaciones Directas para Maury y Eli */}
+          {/* Section 4: Centro de Notificaciones Directas para Maury */}
           <div className="bg-brand-carbon border-2 border-brand-green/60 rounded-2xl p-6 shadow-neon-sm space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-border/60 pb-4">
               <div className="flex items-center gap-3">
@@ -345,13 +345,13 @@ export const AdminSettingsPage: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
-                    <span>Centro de Notificaciones Directas (Maury y Eli)</span>
+                    <span>Centro de Notificaciones Directas (Taller / Maury)</span>
                     <span className="px-2 py-0.5 rounded-full bg-brand-green/20 text-brand-green text-[10px] font-mono font-bold">
-                      NUEVO
+                      ACTIVO
                     </span>
                   </h2>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Al introducir un nuevo presupuesto online o en taller, sonará la campana acústica y se enviará el aviso a Maury y a Eli.
+                    Al introducir un nuevo presupuesto online o en taller, sonará la campana acústica y se enviará el aviso a Maury por WhatsApp.
                   </p>
                 </div>
               </div>
@@ -373,22 +373,20 @@ export const AdminSettingsPage: React.FC = () => {
               </div>
             )}
 
-            {/* Dos tarjetas: Maury y Eli */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              
-              {/* Tarjeta de Maury */}
+            {/* Tarjeta de Maury */}
+            <div className="max-w-xl">
               <div className="bg-brand-surface/70 border border-emerald-500/40 rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-brand-border/40">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
-                    <span className="text-xs font-black text-white">Canal de Maury (Administrador)</span>
+                    <span className="text-xs font-black text-white">Canal de WhatsApp y Avisos: Maury (Administrador)</span>
                   </div>
                   <span className="text-[10px] font-mono bg-emerald-950/80 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">
                     Activo
                   </span>
                 </div>
 
-                <div className="space-y-2 text-xs">
+                <div className="space-y-3 text-xs">
                   <div>
                     <label className="block text-slate-400 mb-1">Teléfono Móvil / WhatsApp de Maury:</label>
                     <input
@@ -410,43 +408,6 @@ export const AdminSettingsPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Tarjeta de Eli */}
-              <div className="bg-brand-surface/70 border border-teal-500/40 rounded-xl p-4 space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-brand-border/40">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-teal-400 shadow-[0_0_8px_#2dd4bf]" />
-                    <span className="text-xs font-black text-white">Canal de Eli (Técnico Creador)</span>
-                  </div>
-                  <span className="text-[10px] font-mono bg-teal-950/80 text-teal-300 px-2 py-0.5 rounded border border-teal-500/30">
-                    Activo
-                  </span>
-                </div>
-
-                <div className="space-y-2 text-xs">
-                  <div>
-                    <label className="block text-slate-400 mb-1">Teléfono Móvil / WhatsApp de Eli:</label>
-                    <input
-                      type="text"
-                      value={notifSettings.eliPhone}
-                      onChange={(e) => setNotifSettings({ ...notifSettings, eliPhone: e.target.value })}
-                      placeholder="Ej. +34 661 99 10 60"
-                      className="w-full bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-brand-green focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-400 mb-1">Correo Electrónico de Eli:</label>
-                    <input
-                      type="email"
-                      value={notifSettings.eliEmail}
-                      onChange={(e) => setNotifSettings({ ...notifSettings, eliEmail: e.target.value })}
-                      className="w-full bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-brand-green focus:outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
             </div>
 
             {/* Opciones y Toggles de Alerta */}

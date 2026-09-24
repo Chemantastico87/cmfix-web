@@ -95,7 +95,7 @@ export const Navbar: React.FC = () => {
                     ? 'bg-brand-green/20 border-brand-green text-brand-green shadow-neon animate-pulse' 
                     : 'bg-brand-surface/80 border-brand-border text-slate-300 hover:text-white hover:border-brand-green/40'
                 }`}
-                title="Avisos y Notificaciones de Presupuestos (Maury y Eli)"
+                title="Avisos y Notificaciones de Presupuestos (Taller CM FIX)"
                 aria-label="Campana de notificaciones"
               >
                 <Bell className="w-4 h-4" />

@@ -77,7 +77,7 @@ export const NotificationTray: React.FC<NotificationTrayProps> = ({ isOpen, onCl
     if (perm === 'granted') {
       showSystemNotification(
         '🔔 CM FIX: ¡Notificaciones Activas!',
-        'Las alertas sonoras y de pantalla están configuradas para Maury y Eli.'
+        'Las alertas sonoras y de pantalla están configuradas para el taller CM FIX.'
       );
       setAlertFeedback('✓ ¡Notificaciones de pantalla y sonido activadas!');
     } else {
@@ -162,7 +162,7 @@ export const NotificationTray: React.FC<NotificationTrayProps> = ({ isOpen, onCl
                   </span>
                 )}
               </h3>
-              <p className="text-[10px] text-slate-400">Canal directo para Maury y Eli</p>
+              <p className="text-[10px] text-slate-400">Canal oficial de presupuestos del taller</p>
             </div>
           </div>
 
@@ -238,7 +238,6 @@ export const NotificationTray: React.FC<NotificationTrayProps> = ({ isOpen, onCl
             notifications.map((item) => {
               const quoteObj = makeQuoteFromItem(item);
               const mauryWa = getWhatsAppNotificationUrl('maury', quoteObj);
-              const eliWa = getWhatsAppNotificationUrl('eli', quoteObj);
 
               return (
                 <div 
@@ -267,22 +266,11 @@ export const NotificationTray: React.FC<NotificationTrayProps> = ({ isOpen, onCl
                         href={mauryWa}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-2 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 text-[10px] font-bold flex items-center gap-1"
-                        title="Enviar aviso a WhatsApp de Maury"
+                        className="px-2.5 py-1 rounded-lg bg-emerald-950 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-300 text-[10px] font-bold flex items-center gap-1"
+                        title="Enviar aviso a WhatsApp de Maury (+34 661 99 10 60)"
                       >
                         <MessageSquare className="w-3 h-3 text-emerald-400" />
-                        <span>Maury</span>
-                      </a>
-
-                      <a
-                        href={eliWa}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-2 py-1 rounded-lg bg-teal-950 hover:bg-teal-900 border border-teal-500/50 text-teal-300 text-[10px] font-bold flex items-center gap-1"
-                        title="Enviar aviso a WhatsApp de Eli"
-                      >
-                        <MessageSquare className="w-3 h-3 text-teal-400" />
-                        <span>Eli</span>
+                        <span>Avisar Maury (WhatsApp)</span>
                       </a>
 
                       <Link
