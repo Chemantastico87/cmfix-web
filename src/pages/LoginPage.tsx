@@ -153,6 +153,21 @@ export const LoginPage: React.FC = () => {
             <KeyRound className="w-4 h-4" />
             <span>{loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}</span>
           </button>
+
+          {/* Recordatorio de Claves de Acceso */}
+          <div className="mt-4 pt-4 border-t border-brand-border/60 text-center space-y-1.5 text-xs text-slate-400">
+            <p className="font-semibold text-slate-300">Cuentas de Acceso:</p>
+            <div className="flex flex-col gap-1.5 text-[11px] font-mono">
+              <span className="px-2.5 py-1 rounded-lg bg-brand-surface border border-brand-border text-slate-300 flex items-center justify-between">
+                <span><strong className="text-brand-green">admin@cmfix.es</strong> (Chema)</span>
+                <span>Clave: <strong className="text-white">admin123</strong> o <strong className="text-white">admin</strong></span>
+              </span>
+              <span className="px-2.5 py-1 rounded-lg bg-brand-surface border border-brand-border text-slate-300 flex items-center justify-between">
+                <span><strong className="text-brand-green">maury@cmfix.es</strong> (Maury)</span>
+                <span>Clave: <strong className="text-white">maury123</strong></span>
+              </span>
+            </div>
+          </div>
         </form>
 
       </div>
