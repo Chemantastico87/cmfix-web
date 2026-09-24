@@ -30,8 +30,12 @@ import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { AdminSecurityPage } from './pages/admin/AdminSecurityPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 
+import { NotificationBanner } from './components/NotificationBanner';
+import { useRealtimeQuotes } from './hooks/useRealtimeQuotes';
+
 // Layout wrapper to conditionally hide Navbar & Footer on /admin routes
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  useRealtimeQuotes();
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
 
@@ -41,6 +45,7 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <main className="flex-1">{children}</main>
       {!isAdmin && <Footer />}
       <InstallPrompt />
+      <NotificationBanner />
     </div>
   );
 };

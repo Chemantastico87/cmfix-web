@@ -7,25 +7,36 @@ import {
   Building2, 
   Calculator, 
   MessageSquare, 
-  ShieldCheck,
-  RefreshCw,
-  KeyRound
+  KeyRound,
+  Bell,
+  Volume2
 } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { dbService } from '../../services/db';
 import { CompanySettings } from '../../types';
+import { 
+  getNotificationSettings, 
+  saveNotificationSettings, 
+  NotificationSettings,
+  playNotificationSound,
+  requestNotificationPermission,
+  showSystemNotification
+} from '../../services/notificationService';
 
 export const AdminSettingsPage: React.FC = () => {
   const [settings, setSettings] = useState<CompanySettings | null>(null);
+  const [notifSettings, setNotifSettings] = useState<NotificationSettings>(getNotificationSettings());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [testAlertMessage, setTestAlertMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
         const data = await dbService.getCompanySettings();
         setSettings(data);
+        setNotifSettings(getNotificationSettings());
       } catch (err) {
         console.error('Error loading settings:', err);
       } finally {
@@ -42,6 +53,7 @@ export const AdminSettingsPage: React.FC = () => {
     setSavedSuccess(false);
     try {
       await dbService.updateCompanySettings(settings);
+      saveNotificationSettings(notifSettings);
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
     } catch (err) {
@@ -49,6 +61,27 @@ export const AdminSettingsPage: React.FC = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleTestNotification = async () => {
+    // 1. Sonido
+    playNotificationSound();
+
+    // 2. Permiso del sistema
+    let perm = Notification.permission;
+    if (perm !== 'granted') {
+      perm = await requestNotificationPermission();
+    }
+
+    if (perm === 'granted') {
+      showSystemNotification(
+        '🔔 Prueba CM FIX: ¡Alerta de Presupuesto!',
+        'Notificación de prueba activa para Maury y Eli. El sistema sonoro y visual funciona correctamente.'
+      );
+    }
+
+    setTestAlertMessage('¡Sonido de campana emitido y notificación de prueba enviada!');
+    setTimeout(() => setTestAlertMessage(null), 4000);
   };
 
   const handleChange = (field: keyof CompanySettings, value: any) => {
@@ -301,6 +334,150 @@ export const AdminSettingsPage: React.FC = () => {
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Section 4: Centro de Notificaciones Directas para Maury y Eli */}
+          <div className="bg-brand-carbon border-2 border-brand-green/60 rounded-2xl p-6 shadow-neon-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-border/60 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-brand-green/20 border border-brand-green/60 flex items-center justify-center text-brand-green shrink-0 shadow-neon-sm">
+                  <Bell className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <h2 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
+                    <span>Centro de Notificaciones Directas (Maury y Eli)</span>
+                    <span className="px-2 py-0.5 rounded-full bg-brand-green/20 text-brand-green text-[10px] font-mono font-bold">
+                      NUEVO
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Al introducir un nuevo presupuesto online o en taller, sonará la campana acústica y se enviará el aviso a Maury y a Eli.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleTestNotification}
+                className="px-4 py-2 rounded-xl bg-brand-surface hover:bg-brand-border border border-brand-green/50 text-brand-green font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all shrink-0 hover:scale-105 active:scale-95"
+              >
+                <Volume2 className="w-4 h-4" />
+                <span>Probar Sonido y Alerta</span>
+              </button>
+            </div>
+
+            {testAlertMessage && (
+              <div className="p-3.5 rounded-xl bg-emerald-950/80 border border-emerald-500 text-emerald-300 text-xs flex items-center gap-2 shadow-neon animate-fadeIn">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{testAlertMessage}</span>
+              </div>
+            )}
+
+            {/* Dos tarjetas: Maury y Eli */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
+              {/* Tarjeta de Maury */}
+              <div className="bg-brand-surface/70 border border-emerald-500/40 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-brand-border/40">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
+                    <span className="text-xs font-black text-white">Canal de Maury (Administrador)</span>
+                  </div>
+                  <span className="text-[10px] font-mono bg-emerald-950/80 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">
+                    Activo
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div>
+                    <label className="block text-slate-400 mb-1">Teléfono Móvil / WhatsApp de Maury:</label>
+                    <input
+                      type="text"
+                      value={notifSettings.mauryPhone}
+                      onChange={(e) => setNotifSettings({ ...notifSettings, mauryPhone: e.target.value })}
+                      className="w-full bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-brand-green focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 mb-1">Correo Electrónico de Maury:</label>
+                    <input
+                      type="email"
+                      value={notifSettings.mauryEmail}
+                      onChange={(e) => setNotifSettings({ ...notifSettings, mauryEmail: e.target.value })}
+                      className="w-full bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-brand-green focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Tarjeta de Eli */}
+              <div className="bg-brand-surface/70 border border-teal-500/40 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-brand-border/40">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-teal-400 shadow-[0_0_8px_#2dd4bf]" />
+                    <span className="text-xs font-black text-white">Canal de Eli (Técnico Creador)</span>
+                  </div>
+                  <span className="text-[10px] font-mono bg-teal-950/80 text-teal-300 px-2 py-0.5 rounded border border-teal-500/30">
+                    Activo
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div>
+                    <label className="block text-slate-400 mb-1">Teléfono Móvil / WhatsApp de Eli:</label>
+                    <input
+                      type="text"
+                      value={notifSettings.eliPhone}
+                      onChange={(e) => setNotifSettings({ ...notifSettings, eliPhone: e.target.value })}
+                      placeholder="Ej. +34 661 99 10 60"
+                      className="w-full bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-brand-green focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 mb-1">Correo Electrónico de Eli:</label>
+                    <input
+                      type="email"
+                      value={notifSettings.eliEmail}
+                      onChange={(e) => setNotifSettings({ ...notifSettings, eliEmail: e.target.value })}
+                      className="w-full bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-brand-green focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Opciones y Toggles de Alerta */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <label className="flex items-center gap-3 p-3 rounded-xl bg-brand-surface border border-brand-border cursor-pointer hover:border-brand-green/40 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={notifSettings.soundEnabled}
+                  onChange={(e) => setNotifSettings({ ...notifSettings, soundEnabled: e.target.checked })}
+                  className="w-4 h-4 rounded text-brand-green focus:ring-0 bg-brand-dark border-brand-border"
+                />
+                <div>
+                  <span className="text-xs font-bold text-white block">Campana Acústica de Taller</span>
+                  <span className="text-[10px] text-slate-400">Reproduce un doble timbre al entrar un nuevo presupuesto.</span>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-3 p-3 rounded-xl bg-brand-surface border border-brand-border cursor-pointer hover:border-brand-green/40 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={notifSettings.systemNotificationsEnabled}
+                  onChange={(e) => setNotifSettings({ ...notifSettings, systemNotificationsEnabled: e.target.checked })}
+                  className="w-4 h-4 rounded text-brand-green focus:ring-0 bg-brand-dark border-brand-border"
+                />
+                <div>
+                  <span className="text-xs font-bold text-white block">Notificaciones Nativas del Dispositivo</span>
+                  <span className="text-[10px] text-slate-400">Ventana emergente en la barra de estado de Windows, Mac o móvil.</span>
+                </div>
+              </label>
+            </div>
+
           </div>
 
           {/* Bottom Save Button */}

@@ -38,11 +38,35 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Service Worker Registration for PWA
+      // Service Worker Registration for PWA con detección activa de actualizaciones
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(err => {
+          navigator.serviceWorker.register('/sw.js').then(reg => {
+            // Verificar actualizaciones inmediatamente
+            reg.update();
+
+            // Detectar si hay un nuevo worker esperando para activarlo
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing;
+              if (newWorker) {
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                  }
+                });
+              }
+            });
+          }).catch(err => {
             console.log('SW registration note:', err);
+          });
+
+          // Re-comprobar actualizaciones al volver a enfocar la aplicación instalada
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+              navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg) reg.update();
+              });
+            }
           });
         });
       }

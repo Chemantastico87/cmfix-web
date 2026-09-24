@@ -20,6 +20,7 @@ import {
   INITIAL_REPAIRS 
 } from './seedData';
 import { supabase, isSupabaseConfigured } from './supabase';
+import { notifyNewQuote } from './notificationService';
 
 const STORAGE_KEYS = {
   SETTINGS: 'cmfix_settings',
@@ -109,43 +110,31 @@ export const dbService = {
 
   // --- Company Settings ---
   async getCompanySettings(): Promise<CompanySettings> {
-    if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.from('company_settings').select('*').single();
-      if (!error && data) {
-        // If Supabase has old Madrid data, normalize with our official settings
-        if (data.address?.includes('Madrid') || data.phone?.includes('600 000 000') || data.phone?.includes('624 89 20 41')) {
-          const updated = {
-            ...data,
-            phone: INITIAL_COMPANY_SETTINGS.phone,
-            whatsapp: INITIAL_COMPANY_SETTINGS.whatsapp,
-            email: INITIAL_COMPANY_SETTINGS.email,
-            address: INITIAL_COMPANY_SETTINGS.address,
-            city: INITIAL_COMPANY_SETTINGS.city,
-            trade_name: INITIAL_COMPANY_SETTINGS.trade_name
-          };
-          // Try to update Supabase remote row
-          try {
-            await supabase.from('company_settings').update({
-              phone: INITIAL_COMPANY_SETTINGS.phone,
-              whatsapp: INITIAL_COMPANY_SETTINGS.whatsapp,
-              email: INITIAL_COMPANY_SETTINGS.email,
-              address: INITIAL_COMPANY_SETTINGS.address,
-              city: INITIAL_COMPANY_SETTINGS.city,
-              trade_name: INITIAL_COMPANY_SETTINGS.trade_name
-            }).eq('id', 1);
-          } catch (e) {
-            console.warn('Could not auto-update remote company_settings:', e);
-          }
-          setLocal(STORAGE_KEYS.SETTINGS, updated);
-          return updated as CompanySettings;
-        }
-        return data as CompanySettings;
-      }
-    }
     const local = getLocal<CompanySettings>(STORAGE_KEYS.SETTINGS, INITIAL_COMPANY_SETTINGS);
-    if (local.address?.includes('Madrid') || local.phone?.includes('600 000 000')) {
-      setLocal(STORAGE_KEYS.SETTINGS, INITIAL_COMPANY_SETTINGS);
-      return INITIAL_COMPANY_SETTINGS;
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase.from('company_settings').select('*').single();
+        if (!error && data) {
+          const merged: CompanySettings = {
+            ...INITIAL_COMPANY_SETTINGS,
+            ...local,
+            company_name: data.company_name || local.company_name || INITIAL_COMPANY_SETTINGS.company_name,
+            trade_name: local.trade_name || INITIAL_COMPANY_SETTINGS.trade_name,
+            phone: data.phone || local.phone || INITIAL_COMPANY_SETTINGS.phone,
+            whatsapp: data.whatsapp || local.whatsapp || INITIAL_COMPANY_SETTINGS.whatsapp,
+            email: data.email || local.email || INITIAL_COMPANY_SETTINGS.email,
+            address: data.address || local.address || INITIAL_COMPANY_SETTINGS.address,
+            city: local.city || INITIAL_COMPANY_SETTINGS.city,
+            cif: data.cif || local.cif || INITIAL_COMPANY_SETTINGS.cif,
+            default_vat: data.tax_rate ?? local.default_vat ?? 21,
+            quote_validity_days: data.default_warranty_months ?? local.quote_validity_days ?? 15
+          };
+          setLocal(STORAGE_KEYS.SETTINGS, merged);
+          return merged;
+        }
+      } catch (err) {
+        console.warn('Error reading company_settings from Supabase:', err);
+      }
     }
     return local;
   },
@@ -153,8 +142,26 @@ export const dbService = {
   async updateCompanySettings(settings: Partial<CompanySettings>): Promise<CompanySettings> {
     const current = await this.getCompanySettings();
     const updated = { ...current, ...settings };
+    
+    // Guardar en Supabase solo las columnas que la base de datos realmente tiene
     if (isSupabaseConfigured && supabase) {
-      await supabase.from('company_settings').update(settings).eq('id', 1);
+      try {
+        const sbPayload: Record<string, any> = {
+          updated_at: new Date().toISOString()
+        };
+        if (settings.company_name !== undefined) sbPayload.company_name = settings.company_name;
+        if (settings.cif !== undefined) sbPayload.cif = settings.cif;
+        if (settings.phone !== undefined) sbPayload.phone = settings.phone;
+        if (settings.whatsapp !== undefined) sbPayload.whatsapp = settings.whatsapp;
+        if (settings.email !== undefined) sbPayload.email = settings.email;
+        if (settings.address !== undefined) sbPayload.address = settings.address;
+        if (settings.default_vat !== undefined) sbPayload.tax_rate = settings.default_vat;
+        if (settings.quote_validity_days !== undefined) sbPayload.default_warranty_months = settings.quote_validity_days;
+
+        await supabase.from('company_settings').update(sbPayload).eq('id', 1);
+      } catch (err) {
+        console.warn('Error updating company_settings in Supabase:', err);
+      }
     }
     setLocal(STORAGE_KEYS.SETTINGS, updated);
     return updated;
@@ -177,7 +184,21 @@ export const dbService = {
       margin
     };
     if (isSupabaseConfigured && supabase) {
-      await supabase.from('pricing_catalog').insert([newItem]);
+      try {
+        await supabase.from('pricing_catalog').insert([{
+          category: item.category,
+          brand: item.brand,
+          model: item.model,
+          issue_type: item.repair_type,
+          part_cost: item.part_cost,
+          labor_cost: item.labor_cost,
+          final_price: item.sale_price,
+          warranty_months: 6,
+          is_active: true
+        }]);
+      } catch (err) {
+        console.warn('Error saving pricing item to Supabase:', err);
+      }
     }
     const current = getLocal<PricingCatalogItem[]>(STORAGE_KEYS.PRICING, INITIAL_PRICING_CATALOG);
     const updated = [newItem, ...current];
@@ -196,7 +217,22 @@ export const dbService = {
     current[index] = updatedItem;
     setLocal(STORAGE_KEYS.PRICING, current);
     if (isSupabaseConfigured && supabase) {
-      await supabase.from('pricing_catalog').update(updatedItem).eq('id', id);
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        if (isUuid) {
+          const sbPayload: Record<string, any> = {};
+          if (item.category !== undefined) sbPayload.category = item.category;
+          if (item.brand !== undefined) sbPayload.brand = item.brand;
+          if (item.model !== undefined) sbPayload.model = item.model;
+          if (item.repair_type !== undefined) sbPayload.issue_type = item.repair_type;
+          if (item.part_cost !== undefined) sbPayload.part_cost = item.part_cost;
+          if (item.labor_cost !== undefined) sbPayload.labor_cost = item.labor_cost;
+          if (item.sale_price !== undefined) sbPayload.final_price = item.sale_price;
+          await supabase.from('pricing_catalog').update(sbPayload).eq('id', id);
+        }
+      } catch (err) {
+        console.warn('Error updating pricing item in Supabase:', err);
+      }
     }
     return updatedItem;
   },
@@ -507,6 +543,14 @@ export const dbService = {
 
     const current = getLocal<Quote[]>(STORAGE_KEYS.QUOTES, INITIAL_QUOTES);
     setLocal(STORAGE_KEYS.QUOTES, [newQuote, ...current]);
+
+    // Disparar notificación acústica, visual y de sistema para Maury y Eli
+    try {
+      notifyNewQuote(newQuote);
+    } catch (notifErr) {
+      console.warn('Could not trigger new quote notification:', notifErr);
+    }
+
     return newQuote;
   },
 
@@ -850,12 +894,30 @@ export const dbService = {
     setLocal(STORAGE_KEYS.REPAIRS, repairs);
 
     if (isSupabaseConfigured && supabase) {
-      await supabase.from('repairs').update({
-        status,
-        notes_public: repair.notes_public,
-        completion_date: repair.completion_date
-      }).eq('id', repair.id);
-      await supabase.from('repair_status_history').insert([historyItem]);
+      try {
+        const updatePayload: Record<string, any> = {
+          status,
+          updated_at: new Date().toISOString()
+        };
+        if (notes) {
+          updatePayload.public_notes = notes;
+        }
+        if (status === 'REPARADO' || status === 'LISTO PARA RECOGER' || status === 'ENTREGADO') {
+          updatePayload.completed_at = new Date().toISOString();
+        }
+        if (status === 'ENTREGADO') {
+          updatePayload.delivered_at = new Date().toISOString();
+        }
+
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(repair.id);
+        if (isUuid) {
+          await supabase.from('repairs').update(updatePayload).eq('id', repair.id);
+        } else if (repair.repair_number) {
+          await supabase.from('repairs').update(updatePayload).eq('repair_number', repair.repair_number);
+        }
+      } catch (err) {
+        console.warn('Error updating repair in Supabase:', err);
+      }
     }
 
     return repair;
@@ -871,8 +933,33 @@ export const dbService = {
     }
     repairs[index] = updated;
     setLocal(STORAGE_KEYS.REPAIRS, repairs);
+
     if (isSupabaseConfigured && supabase) {
-      await supabase.from('repairs').update(updated).eq('id', id);
+      try {
+        const sbPayload: Record<string, any> = {
+          updated_at: new Date().toISOString()
+        };
+        if (data.status) sbPayload.status = data.status;
+        if (data.notes_public !== undefined) sbPayload.public_notes = data.notes_public;
+        if (data.notes_internal !== undefined) sbPayload.internal_notes = data.notes_internal;
+        if (data.price_total !== undefined) sbPayload.total_cost = data.price_total;
+        if (data.cost_total !== undefined) sbPayload.parts_cost = data.cost_total;
+        if (data.serial_imei !== undefined) sbPayload.serial_imei = data.serial_imei;
+        if (data.diagnosis !== undefined) sbPayload.internal_notes = data.diagnosis;
+        if (data.work_performed !== undefined) sbPayload.public_notes = data.work_performed;
+        if (data.device_brand) sbPayload.brand = data.device_brand;
+        if (data.device_model) sbPayload.model = data.device_model;
+        if (data.completion_date) sbPayload.completed_at = data.completion_date;
+
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        if (isUuid) {
+          await supabase.from('repairs').update(sbPayload).eq('id', id);
+        } else if (updated.repair_number) {
+          await supabase.from('repairs').update(sbPayload).eq('repair_number', updated.repair_number);
+        }
+      } catch (err) {
+        console.warn('Error updating repair in Supabase:', err);
+      }
     }
     return updated;
   },
@@ -894,7 +981,23 @@ export const dbService = {
     const current = getLocal<InventoryItem[]>(STORAGE_KEYS.INVENTORY, INITIAL_INVENTORY);
     setLocal(STORAGE_KEYS.INVENTORY, [newItem, ...current]);
     if (isSupabaseConfigured && supabase) {
-      await supabase.from('inventory').insert([newItem]);
+      try {
+        await supabase.from('inventory').insert([{
+          sku: item.sku,
+          name: item.name,
+          category: item.category,
+          brand: (item as any).device_brand || (item as any).brand || null,
+          model_compatibility: (item as any).device_model || (item as any).model_compatibility || null,
+          stock: item.stock || 0,
+          min_stock: item.min_stock || 2,
+          cost_price: (item as any).cost || (item as any).cost_price || 0,
+          sale_price: (item as any).price || (item as any).sale_price || 0,
+          supplier_id: (item as any).supplier_id && /^[0-9a-f-]{36}$/i.test((item as any).supplier_id) ? (item as any).supplier_id : null,
+          location: (item as any).location || 'Taller CM FIX'
+        }]);
+      } catch (err) {
+        console.warn('Error saving inventory item to Supabase:', err);
+      }
     }
     return newItem;
   },
@@ -907,7 +1010,26 @@ export const dbService = {
     current[index] = updated;
     setLocal(STORAGE_KEYS.INVENTORY, current);
     if (isSupabaseConfigured && supabase) {
-      await supabase.from('inventory').update(data).eq('id', id);
+      try {
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+        if (isUuid) {
+          const sbPayload: Record<string, any> = {
+            updated_at: new Date().toISOString()
+          };
+          if (data.name !== undefined) sbPayload.name = data.name;
+          if (data.category !== undefined) sbPayload.category = data.category;
+          if (data.stock !== undefined) sbPayload.stock = data.stock;
+          if (data.min_stock !== undefined) sbPayload.min_stock = data.min_stock;
+          if ((data as any).device_brand !== undefined) sbPayload.brand = (data as any).device_brand;
+          if ((data as any).device_model !== undefined) sbPayload.model_compatibility = (data as any).device_model;
+          if ((data as any).cost !== undefined) sbPayload.cost_price = (data as any).cost;
+          if ((data as any).price !== undefined) sbPayload.sale_price = (data as any).price;
+
+          await supabase.from('inventory').update(sbPayload).eq('id', id);
+        }
+      } catch (err) {
+        console.warn('Error updating inventory item in Supabase:', err);
+      }
     }
     return updated;
   },

@@ -122,9 +122,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 2. Cargar lista de usuarios creados
       setManagedUsers(getStoredManagedUsers());
 
-      // 3. Comprobar únicamente la sesión activa de la pestaña actual (sessionStorage)
+      // 3. Comprobar sesión activa persistente (localStorage o sessionStorage)
       try {
-        const saved = sessionStorage.getItem(SESSION_AUTH_KEY);
+        const saved = localStorage.getItem(SESSION_AUTH_KEY) || sessionStorage.getItem(SESSION_AUTH_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
           const isTech = parsed.isCreator ?? (parsed.email?.includes('tecnic') || parsed.id === 'tech-cmfix');
@@ -133,6 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
         }
       } catch {
+        localStorage.removeItem(SESSION_AUTH_KEY);
         sessionStorage.removeItem(SESSION_AUTH_KEY);
         setUser(null);
       }
@@ -167,6 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             };
             setUser(authUser);
             sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(authUser));
+            localStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(authUser));
             setLoading(false);
             return { success: true };
           }
@@ -210,6 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         setUser(adminUser);
         sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(adminUser));
+        localStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(adminUser));
         setLoading(false);
         return { success: true };
       }
@@ -246,6 +249,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         setUser(techUser);
         sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(techUser));
+        localStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(techUser));
         setLoading(false);
         return { success: true };
       }
@@ -268,6 +272,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         setUser(authUser);
         sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(authUser));
+        localStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(authUser));
         setLoading(false);
         return { success: true };
       }
@@ -466,6 +471,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     try {
       sessionStorage.removeItem(SESSION_AUTH_KEY);
+      localStorage.removeItem(SESSION_AUTH_KEY);
       localStorage.removeItem('cmfix_auth_session');
       localStorage.removeItem('cmfix_auth');
     } catch {}

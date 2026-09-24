@@ -11,14 +11,17 @@ import {
   Wrench, 
   ExternalLink,
   Plus,
-  RefreshCw,
   Printer,
-  Trash2
+  Trash2,
+  RefreshCw,
+  MessageCircle,
+  Bell
 } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { dbService } from '../../services/db';
 import { Quote, QuoteStatus, CompanySettings } from '../../types';
 import { generateQuotePDF } from '../../utils/pdfGenerator';
+import { getWhatsAppNotificationUrl } from '../../services/notificationService';
 
 export const AdminQuotesPage: React.FC = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -225,7 +228,7 @@ export const AdminQuotesPage: React.FC = () => {
                       {q.total.toFixed(2)} €
                     </td>
                     <td className="p-3.5">
-                      <div className="flex items-center justify-center gap-2">
+                      <div className="flex items-center justify-center gap-1.5">
                         {q.status === 'PENDIENTE' && (
                           <button
                             onClick={() => handleConvertQuoteToRepair(q)}
@@ -236,6 +239,24 @@ export const AdminQuotesPage: React.FC = () => {
                             <span>A Taller</span>
                           </button>
                         )}
+                        <a
+                          href={getWhatsAppNotificationUrl('maury', q)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-400 hover:text-emerald-200 border border-emerald-500/40 transition-colors"
+                          title="Avisar a Maury por WhatsApp"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                        </a>
+                        <a
+                          href={getWhatsAppNotificationUrl('eli', q)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded-lg bg-teal-950/60 hover:bg-teal-900/80 text-teal-400 hover:text-teal-200 border border-teal-500/40 transition-colors"
+                          title="Avisar a Eli por WhatsApp"
+                        >
+                          <Bell className="w-3.5 h-3.5" />
+                        </a>
                         <button
                           onClick={() => handleDownloadPDF(q)}
                           className="p-1.5 rounded-lg bg-brand-surface hover:bg-brand-elevated text-slate-300 hover:text-white border border-brand-border transition-colors"

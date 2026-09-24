@@ -23,11 +23,13 @@ import {
   Info,
   Globe,
   Code,
-  Layers
+  Layers,
+  MessageCircle
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { DeviceCategory, PricingCatalogItem, CompanySettings } from '../types';
 import { dbService } from '../services/db';
+import { getWhatsAppNotificationUrl } from '../services/notificationService';
 
 export const BudgetEstimatorPage: React.FC = () => {
   const location = useLocation();
@@ -999,6 +1001,76 @@ export const BudgetEstimatorPage: React.FC = () => {
             >
               <span>Consultar Seguimiento</span>
             </Link>
+          </div>
+
+          {/* Acceso directo WhatsApp para Maury y Eli */}
+          <div className="mt-8 pt-6 border-t border-brand-border/60 max-w-lg mx-auto">
+            <span className="text-xs font-bold text-slate-300 block mb-3">
+              ¿Deseas confirmación express? Notifica a los técnicos directamente por WhatsApp:
+            </span>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <a
+                href={getWhatsAppNotificationUrl('maury', {
+                  id: createdQuoteId || '',
+                  quote_number: createdQuoteNumber || 'CMF',
+                  customer_id: 'online',
+                  customer: { id: 'c1', name: `${name} ${surname}`.trim(), phone, email, created_at: '' },
+                  device_category: category,
+                  device_brand: brand,
+                  device_model: model || `${brand} ${category}`,
+                  repair_type: repairType,
+                  issue_description: issueDescription,
+                  photos: [],
+                  items: [],
+                  subtotal: pricing.subtotal,
+                  vat_rate: pricing.vatRate,
+                  vat_amount: (pricing.subtotal * pricing.vatRate) / 100,
+                  total: pricing.total,
+                  is_orientative: true,
+                  status: 'PENDIENTE',
+                  estimated_time: pricing.estimatedTime,
+                  created_at: new Date().toISOString(),
+                  valid_until: ''
+                })}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all hover:scale-105"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Avisar a Maury (WhatsApp)</span>
+              </a>
+
+              <a
+                href={getWhatsAppNotificationUrl('eli', {
+                  id: createdQuoteId || '',
+                  quote_number: createdQuoteNumber || 'CMF',
+                  customer_id: 'online',
+                  customer: { id: 'c1', name: `${name} ${surname}`.trim(), phone, email, created_at: '' },
+                  device_category: category,
+                  device_brand: brand,
+                  device_model: model || `${brand} ${category}`,
+                  repair_type: repairType,
+                  issue_description: issueDescription,
+                  photos: [],
+                  items: [],
+                  subtotal: pricing.subtotal,
+                  vat_rate: pricing.vatRate,
+                  vat_amount: (pricing.subtotal * pricing.vatRate) / 100,
+                  total: pricing.total,
+                  is_orientative: true,
+                  status: 'PENDIENTE',
+                  estimated_time: pricing.estimatedTime,
+                  created_at: new Date().toISOString(),
+                  valid_until: ''
+                })}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition-all hover:scale-105"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Avisar al Técnico Eli (WhatsApp)</span>
+              </a>
+            </div>
           </div>
         </div>
       )}
