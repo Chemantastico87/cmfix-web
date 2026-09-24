@@ -31,6 +31,8 @@ import {
   getNotificationSettings
 } from '../services/notificationService';
 
+import { NotificationPrompt } from './NotificationPrompt';
+
 interface AdminLayoutProps {
   children: React.ReactNode;
 }
@@ -84,6 +86,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
     { label: 'Reparaciones', path: '/admin/reparaciones', icon: Wrench },
     { label: 'Presupuestos', path: '/admin/presupuestos', icon: FileText },
+    { label: 'Notificaciones Maury/Eli', path: '/admin/configuracion', icon: Bell },
     { label: 'Clientes', path: '/admin/clientes', icon: Users },
     { label: 'Inventario / Piezas', path: '/admin/inventario', icon: Package },
     { label: 'Proveedores', path: '/admin/proveedores', icon: Truck },
@@ -366,6 +369,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <NotificationPrompt />
         {children}
       </main>
 

@@ -14,17 +14,58 @@ import {
   ArrowRight,
   RefreshCw,
   Smartphone,
-  ExternalLink
+  ExternalLink,
+  Bell,
+  Volume2,
+  Settings,
+  Sparkles
 } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { dbService } from '../../services/db';
 import { DashboardStats, Quote, Repair } from '../../types';
+import { 
+  getNotificationSettings, 
+  playNotificationSound,
+  requestNotificationPermission,
+  showSystemNotification,
+  saveNotificationSettings
+} from '../../services/notificationService';
 
 export const AdminDashboardPage: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentRepairs, setRecentRepairs] = useState<Repair[]>([]);
   const [recentQuotes, setRecentQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [notifSettings, setNotifSettings] = useState(getNotificationSettings());
+  const [hasPermission, setHasPermission] = useState(
+    typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted'
+  );
+  const [testSuccess, setTestSuccess] = useState(false);
+
+  const handleEnableNotifications = async () => {
+    playNotificationSound();
+    const perm = await requestNotificationPermission();
+    setHasPermission(perm === 'granted');
+    const updated = saveNotificationSettings({ 
+      soundEnabled: true, 
+      systemNotificationsEnabled: perm === 'granted' 
+    });
+    setNotifSettings(updated);
+    if (perm === 'granted') {
+      showSystemNotification(
+        '🔔 CM FIX: ¡Notificaciones Activas!',
+        'Avisos configurados correctamente para Maury y Eli.'
+      );
+    }
+    setTestSuccess(true);
+    setTimeout(() => setTestSuccess(false), 4000);
+  };
+
+  const handleTestSound = () => {
+    playNotificationSound();
+    setTestSuccess(true);
+    setTimeout(() => setTestSuccess(false), 3000);
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -79,6 +120,93 @@ export const AdminDashboardPage: React.FC = () => {
               <Plus className="w-4 h-4" />
               <span>Nueva Reparación</span>
             </Link>
+          </div>
+        </div>
+
+        {/* 🔔 BANNER DESTACADO: CENTRO DE ALERTAS Y NOTIFICACIONES DE PRESUPUESTOS (MAURY Y ELI) */}
+        <div className="bg-gradient-to-r from-brand-carbon via-brand-surface to-brand-carbon border-2 border-brand-green/60 rounded-2xl p-5 shadow-neon-sm space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-brand-green/20 border border-brand-green/60 flex items-center justify-center text-brand-green shrink-0 shadow-neon-sm animate-pulse">
+                <Bell className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm sm:text-base font-black text-white">
+                    Notificaciones de Presupuestos (Maury y Eli)
+                  </h2>
+                  <span className="px-2 py-0.5 rounded-full bg-brand-green/20 text-brand-green text-[10px] font-mono font-black border border-brand-green/40">
+                    EN VIVO
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Avisos automáticos con campana acústica y alertas en pantalla al crearse un presupuesto en taller o web pública.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              <button
+                onClick={handleEnableNotifications}
+                className={`px-4 py-2.5 rounded-xl font-black text-xs flex items-center gap-2 shadow-neon transition-all active:scale-95 ${
+                  hasPermission 
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white' 
+                    : 'bg-brand-green hover:bg-brand-green-neon text-black animate-bounce-subtle'
+                }`}
+              >
+                <Bell className="w-4 h-4" />
+                <span>{hasPermission ? '✓ Notificaciones Activas' : 'Activar Notificaciones Aquí'}</span>
+              </button>
+
+              <button
+                onClick={handleTestSound}
+                className="px-4 py-2.5 rounded-xl bg-brand-surface hover:bg-brand-border border border-brand-border text-white text-xs font-bold flex items-center gap-1.5 transition-colors"
+                title="Hacer sonar la campana de prueba"
+              >
+                <Volume2 className="w-4 h-4 text-brand-green" />
+                <span>Probar Timbre</span>
+              </button>
+
+              <Link
+                to="/admin/configuracion"
+                className="px-3.5 py-2.5 rounded-xl bg-brand-surface hover:bg-brand-border border border-brand-border text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                title="Ajustes de teléfonos y correos"
+              >
+                <Settings className="w-4 h-4 text-brand-green" />
+                <span>Ajustes</span>
+              </Link>
+            </div>
+
+          </div>
+
+          {testSuccess && (
+            <div className="p-3 rounded-xl bg-emerald-950/80 border border-emerald-500 text-emerald-300 text-xs flex items-center gap-2 shadow-neon animate-fadeIn">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>¡Campana acústica comprobada y notificaciones verificadas en este dispositivo!</span>
+            </div>
+          )}
+
+          {/* Sub-barra de canales activos */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-brand-border/40 text-[11px]">
+            <div className="bg-brand-dark/50 p-2 rounded-lg border border-brand-border/30">
+              <span className="text-slate-400 block">Canal Maury:</span>
+              <span className="font-mono font-bold text-emerald-300 truncate block">{notifSettings.mauryPhone}</span>
+            </div>
+            <div className="bg-brand-dark/50 p-2 rounded-lg border border-brand-border/30">
+              <span className="text-slate-400 block">Canal Eli:</span>
+              <span className="font-mono font-bold text-teal-300 truncate block">{notifSettings.eliPhone || 'Configurado'}</span>
+            </div>
+            <div className="bg-brand-dark/50 p-2 rounded-lg border border-brand-border/30">
+              <span className="text-slate-400 block">Campana Sonora:</span>
+              <span className="font-bold text-brand-green">Activada (Chime D5/A5)</span>
+            </div>
+            <div className="bg-brand-dark/50 p-2 rounded-lg border border-brand-border/30">
+              <span className="text-slate-400 block">Avisos de Sistema:</span>
+              <span className={hasPermission ? 'font-bold text-emerald-400' : 'font-bold text-amber-400'}>
+                {hasPermission ? '✓ Permitido' : '⚡ Pulsa "Activar"'}
+              </span>
+            </div>
           </div>
         </div>
 
