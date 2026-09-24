@@ -63,6 +63,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     }
   }, [user, loading, navigate]);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-brand-dark text-brand-green font-mono">
@@ -102,10 +106,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-brand-dark text-slate-100 flex flex-col md:flex-row">
+    <div className="min-h-screen md:h-screen w-full bg-brand-dark text-slate-100 flex flex-col md:flex-row md:overflow-hidden">
       
       {/* Sidebar for Desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-brand-carbon border-r border-brand-border/80 shrink-0">
+      <aside className="hidden md:flex flex-col w-64 md:h-screen bg-brand-carbon border-r border-brand-border/80 shrink-0">
         
         {/* Brand header */}
         <div className="p-4 border-b border-brand-border/60 flex items-center justify-between relative">
@@ -300,7 +304,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      <main className="flex-1 flex flex-col min-w-0 md:h-screen md:overflow-y-auto">
         
         {/* DESKTOP STICKY TOPBAR HEADER CON CAMPANA PROMINENTE */}
         <header className="hidden md:flex sticky top-0 z-30 bg-brand-carbon/95 backdrop-blur-md border-b border-brand-border/80 px-6 py-3 items-center justify-between gap-4">
