@@ -20,7 +20,9 @@ import {
   Sun,
   Moon,
   Volume2,
-  RefreshCw
+  RefreshCw,
+  Zap,
+  History
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -79,8 +81,10 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   const navItems = [
     { label: 'Dashboard', path: '/admin', icon: LayoutDashboard },
+    { label: 'Modo Mostrador', path: '/admin/mostrador', icon: Zap },
     { label: 'Reparaciones', path: '/admin/reparaciones', icon: Wrench },
     { label: 'Presupuestos', path: '/admin/presupuestos', icon: FileText },
+    { label: 'Registro Auditoría', path: '/admin/auditoria', icon: History },
     { label: 'Notificaciones Taller', path: '/admin/configuracion', icon: Bell },
     { label: 'Clientes', path: '/admin/clientes', icon: Users },
     { label: 'Inventario / Piezas', path: '/admin/inventario', icon: Package },
@@ -323,6 +327,16 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           {/* Action Header Items */}
           <div className="flex items-center gap-3">
             
+            {/* Quick Modo Mostrador button */}
+            <Link
+              to="/admin/mostrador"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-green/20 hover:bg-brand-green text-brand-green hover:text-black font-extrabold text-xs border border-brand-green/50 shadow-neon-sm transition-all"
+              title="Acceso directo al Modo Mostrador / Recepción de taller"
+            >
+              <Zap className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>Modo Mostrador</span>
+            </Link>
+
             {/* Quick Test Sound Button */}
             <button
               onClick={handleTestSound}

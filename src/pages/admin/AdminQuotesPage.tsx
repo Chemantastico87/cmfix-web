@@ -19,27 +19,43 @@ import {
 } from 'lucide-react';
 import { AdminLayout } from '../../components/AdminLayout';
 import { dbService } from '../../services/db';
-import { Quote, QuoteStatus, CompanySettings } from '../../types';
+import { Quote, QuoteStatus, CompanySettings, PricingCatalogItem, DeviceCategory } from '../../types';
 import { generateQuotePDF } from '../../utils/pdfGenerator';
 import { getWhatsAppNotificationUrl } from '../../services/notificationService';
 
 export const AdminQuotesPage: React.FC = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [settings, setSettings] = useState<CompanySettings | null>(null);
+  const [catalog, setCatalog] = useState<PricingCatalogItem[]>([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [loading, setLoading] = useState(true);
   const [convertingId, setConvertingId] = useState<string | null>(null);
 
+  // New Quote Modal State (Manual vs Automatic)
+  const [isNewModalOpen, setIsNewModalOpen] = useState(false);
+  const [newPricingMode, setNewPricingMode] = useState<'AUTO' | 'MANUAL'>('AUTO');
+  const [newCustName, setNewCustName] = useState('');
+  const [newCustPhone, setNewCustPhone] = useState('');
+  const [newCustEmail, setNewCustEmail] = useState('');
+  const [newCategory, setNewCategory] = useState<DeviceCategory>('iPhone');
+  const [newBrand, setNewBrand] = useState('Apple');
+  const [newModel, setNewModel] = useState('');
+  const [newRepairType, setNewRepairType] = useState('Cambio de pantalla rota');
+  const [newDescription, setNewDescription] = useState('');
+  const [newSubtotal, setNewSubtotal] = useState<number>(65);
+
   const loadData = async () => {
     setLoading(true);
     try {
-      const [q, s] = await Promise.all([
+      const [q, s, cat] = await Promise.all([
         dbService.getQuotes(),
-        dbService.getCompanySettings()
+        dbService.getCompanySettings(),
+        dbService.getPricingCatalog()
       ]);
       setQuotes(q);
       setSettings(s);
+      setCatalog(cat);
     } catch (err) {
       console.error('Error loading quotes:', err);
     } finally {
@@ -94,6 +110,58 @@ export const AdminQuotesPage: React.FC = () => {
     }
   };
 
+  const handleCreateQuote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      let subtotalToUse = Number(newSubtotal);
+      if (newPricingMode === 'AUTO') {
+        const match = catalog.find(item => 
+          item.category === newCategory && 
+          item.repair_type.toLowerCase() === newRepairType.toLowerCase()
+        );
+        if (match) subtotalToUse = match.sale_price;
+      }
+
+      const quote = await dbService.createQuote({
+        customerName: newCustName,
+        customerPhone: newCustPhone,
+        customerEmail: newCustEmail || 'cliente@cmfix.es',
+        deviceCategory: newCategory,
+        deviceBrand: newBrand,
+        deviceModel: newModel,
+        repairType: newRepairType,
+        issueDescription: newDescription || newRepairType,
+        subtotal: subtotalToUse,
+        vatRate: 21,
+        isOrientative: newPricingMode === 'AUTO',
+        estimatedTime: '24-48 horas',
+        items: [
+          {
+            id: 'qi-' + Date.now(),
+            description: `${newRepairType} (${newBrand} ${newModel})`,
+            type: 'PART',
+            cost: subtotalToUse * 0.5,
+            price: subtotalToUse,
+            quantity: 1
+          }
+        ]
+      });
+
+      setIsNewModalOpen(false);
+      // Reset form
+      setNewCustName('');
+      setNewCustPhone('');
+      setNewCustEmail('');
+      setNewModel('');
+      setNewDescription('');
+      await loadData();
+      alert(`¡Presupuesto ${quote.quote_number} generado correctamente!`);
+    } catch (err) {
+      console.error('Error creating quote:', err);
+      alert('Error al generar el presupuesto.');
+    }
+  };
+
   const handleDownloadPDF = async (quote: Quote) => {
     if (!settings) return;
     await generateQuotePDF(quote, settings);
@@ -105,7 +173,9 @@ export const AdminQuotesPage: React.FC = () => {
       q.customer?.name.toLowerCase().includes(search.toLowerCase()) ||
       q.device_model.toLowerCase().includes(search.toLowerCase()) ||
       q.repair_type.toLowerCase().includes(search.toLowerCase());
+
     const matchStatus = filterStatus === 'ALL' || q.status === filterStatus;
+
     return matchSearch && matchStatus;
   });
 
@@ -133,14 +203,13 @@ export const AdminQuotesPage: React.FC = () => {
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-brand-green' : ''}`} />
             </button>
-            <Link
-              to="/presupuesto"
-              target="_blank"
+            <button
+              onClick={() => setIsNewModalOpen(true)}
               className="px-4 py-2 rounded-xl bg-brand-green hover:bg-brand-green-neon text-black font-extrabold text-xs flex items-center gap-1.5 shadow-neon"
             >
-              <Plus className="w-4 h-4" />
-              <span>Nuevo Presupuesto</span>
-            </Link>
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>Nuevo Presupuesto (Manual / Auto)</span>
+            </button>
           </div>
         </div>
 
@@ -276,6 +345,170 @@ export const AdminQuotesPage: React.FC = () => {
             </table>
           </div>
         </div>
+
+        {/* MODAL: NUEVO PRESUPUESTO (MANUAL VS AUTO) */}
+        {isNewModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-brand-carbon border border-brand-green/60 rounded-2xl max-w-xl w-full p-6 shadow-neon max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between pb-4 border-b border-brand-border mb-5">
+                <div>
+                  <span className="text-[10px] font-mono text-brand-green uppercase font-bold">EMISIÓN DE PRESUPUESTO</span>
+                  <h3 className="text-lg font-black text-white">Nuevo Presupuesto CM FIX</h3>
+                </div>
+                <button onClick={() => setIsNewModalOpen(false)} className="text-slate-400 hover:text-white">
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateQuote} className="space-y-4">
+                {/* Pricing Mode Toggle */}
+                <div className="p-3 rounded-xl bg-brand-surface/60 border border-brand-border flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-300">Modo de Tarificación:</span>
+                  <div className="flex p-1 bg-brand-dark rounded-xl border border-brand-border text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setNewPricingMode('AUTO')}
+                      className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                        newPricingMode === 'AUTO'
+                          ? 'bg-brand-green text-black shadow-neon-sm'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Catálogo Automático
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewPricingMode('MANUAL')}
+                      className={`px-3 py-1 rounded-lg font-bold transition-all ${
+                        newPricingMode === 'MANUAL'
+                          ? 'bg-brand-green text-black shadow-neon-sm'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Precio Manual
+                    </button>
+                  </div>
+                </div>
+
+                {/* Customer fields */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1">Nombre Cliente *</label>
+                    <input
+                      type="text"
+                      required
+                      value={newCustName}
+                      onChange={(e) => setNewCustName(e.target.value)}
+                      placeholder="Nombre y apellidos"
+                      className="w-full px-3 py-2 rounded-xl bg-brand-dark border border-brand-border text-xs text-white focus:outline-none focus:border-brand-green"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1">Teléfono (WhatsApp) *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={newCustPhone}
+                      onChange={(e) => setNewCustPhone(e.target.value)}
+                      placeholder="612 345 678"
+                      className="w-full px-3 py-2 rounded-xl bg-brand-dark border border-brand-border text-xs text-white font-mono focus:outline-none focus:border-brand-green"
+                    />
+                  </div>
+                </div>
+
+                {/* Device fields */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1">Categoría</label>
+                    <select
+                      value={newCategory}
+                      onChange={(e: any) => setNewCategory(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-brand-dark border border-brand-border text-xs text-white focus:outline-none focus:border-brand-green"
+                    >
+                      {['iPhone', 'Samsung', 'Xiaomi', 'Android', 'PC', 'Portátil', 'Tablet', 'Consola', 'Otro'].map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1">Marca</label>
+                    <input
+                      type="text"
+                      value={newBrand}
+                      onChange={(e) => setNewBrand(e.target.value)}
+                      placeholder="Apple, Samsung..."
+                      className="w-full px-3 py-2 rounded-xl bg-brand-dark border border-brand-border text-xs text-white focus:outline-none focus:border-brand-green"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-300 block mb-1">Modelo *</label>
+                    <input
+                      type="text"
+                      required
+                      value={newModel}
+                      onChange={(e) => setNewModel(e.target.value)}
+                      placeholder="14 Pro, S23..."
+                      className="w-full px-3 py-2 rounded-xl bg-brand-dark border border-brand-border text-xs text-white focus:outline-none focus:border-brand-green"
+                    />
+                  </div>
+                </div>
+
+                {/* Repair description */}
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">Avería / Trabajo a Presupuestar *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newRepairType}
+                    onChange={(e) => setNewRepairType(e.target.value)}
+                    placeholder="ej. Cambio de pantalla OLED o batería"
+                    className="w-full px-3 py-2 rounded-xl bg-brand-dark border border-brand-border text-xs text-white focus:outline-none focus:border-brand-green"
+                  />
+                </div>
+
+                {/* Price input */}
+                <div>
+                  <label className="text-xs font-semibold text-slate-300 block mb-1">
+                    {newPricingMode === 'MANUAL' ? 'Importe Base Manual (€ sin IVA) *' : 'Precio Estimado Catálogo (€ sin IVA)'}
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    required
+                    value={newSubtotal}
+                    onChange={(e) => setNewSubtotal(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl bg-brand-dark border border-brand-border text-xs text-white font-mono focus:outline-none focus:border-brand-green"
+                  />
+                </div>
+
+                <div className="p-3 rounded-xl bg-brand-surface/60 border border-brand-border flex items-center justify-between text-xs">
+                  <span className="text-slate-400">Total con IVA (21%):</span>
+                  <span className="font-mono font-black text-brand-green text-base">
+                    {(Number(newSubtotal) * 1.21).toFixed(2)} €
+                  </span>
+                </div>
+
+                {/* Action buttons */}
+                <div className="flex justify-end gap-3 pt-3 border-t border-brand-border">
+                  <button
+                    type="button"
+                    onClick={() => setIsNewModalOpen(false)}
+                    className="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-xs font-semibold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 rounded-xl bg-brand-green hover:bg-brand-green-neon text-black font-extrabold text-xs shadow-neon transition-all"
+                  >
+                    Emitir Presupuesto
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
       </div>
     </AdminLayout>

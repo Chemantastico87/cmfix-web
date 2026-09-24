@@ -15,12 +15,22 @@ import {
   X,
   ArrowRight,
   TrendingUp,
-  Tag
+  Tag,
+  Activity,
+  Smartphone,
+  History,
+  PenTool,
+  Zap,
+  ClipboardCheck
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import { AdminLayout } from '../../components/AdminLayout';
 import { dbService } from '../../services/db';
-import { Repair, RepairStatus, DeviceCategory } from '../../types';
+import { Repair, RepairStatus, DeviceCategory, DiagnosticItem, DeviceCheckinData } from '../../types';
+import { DiagnosticEngineModal } from '../../components/DiagnosticEngineModal';
+import { DeviceCheckinModal } from '../../components/DeviceCheckinModal';
+import { DeviceHistoryModal } from '../../components/DeviceHistoryModal';
+import { ProfitabilityModal } from '../../components/ProfitabilityModal';
 
 export const AdminRepairsPage: React.FC = () => {
   const [repairs, setRepairs] = useState<Repair[]>([]);
@@ -28,6 +38,12 @@ export const AdminRepairsPage: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [viewMode, setViewMode] = useState<'KANBAN' | 'LIST'>('KANBAN');
   const [loading, setLoading] = useState(true);
+
+  // V1.5 Sub-Modals
+  const [diagRepair, setDiagRepair] = useState<Repair | null>(null);
+  const [checkinRepair, setCheckinRepair] = useState<Repair | null>(null);
+  const [profitRepair, setProfitRepair] = useState<Repair | null>(null);
+  const [historyQuery, setHistoryQuery] = useState<string | null>(null);
 
   // Selected Repair Modal
   const [selectedRepair, setSelectedRepair] = useState<Repair | null>(null);
@@ -94,21 +110,41 @@ export const AdminRepairsPage: React.FC = () => {
   const handleSaveRepairModal = async () => {
     if (!selectedRepair) return;
     try {
+      const prevStatus = selectedRepair.status;
       await dbService.updateRepair(selectedRepair.id, {
         cost_total: Number(modalCost),
         price_total: Number(modalPrice)
       });
-      await dbService.updateRepairStatus(
+      const updated = await dbService.updateRepairStatus(
         selectedRepair.id,
         modalStatus,
         modalNotesPublic,
         'CM FIX Admin'
       );
       setIsModalOpen(false);
-      loadRepairs();
+      await loadRepairs();
+
+      // Automatización de estados: Si cambia a LISTO PARA RECOGER, prompt para avisar por WhatsApp
+      if (modalStatus === 'LISTO PARA RECOGER' && prevStatus !== 'LISTO PARA RECOGER' && updated) {
+        if (window.confirm(`¿Deseas enviar el aviso automático por WhatsApp a ${updated.customer?.name || 'cliente'} informando de que la orden ${updated.repair_number} ya está LISTA PARA RECOGER?`)) {
+          sendWhatsAppNotification(updated);
+        }
+      }
     } catch (err) {
       console.error('Error updating repair:', err);
     }
+  };
+
+  const handleSaveDiagnostics = async (diagnostics: DiagnosticItem[]) => {
+    if (!diagRepair) return;
+    await dbService.updateRepairDiagnostics(diagRepair.id, diagnostics);
+    await loadRepairs();
+  };
+
+  const handleSaveCheckin = async (checkinData: DeviceCheckinData) => {
+    if (!checkinRepair) return;
+    await dbService.updateRepairCheckin(checkinRepair.id, checkinData);
+    await loadRepairs();
   };
 
   const handleCreateNewRepair = async (e: React.FormEvent) => {
@@ -321,19 +357,60 @@ export const AdminRepairsPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="p-3.5 text-right font-mono font-bold text-white">{r.price_total.toFixed(2)} €</td>
-                      <td className="p-3.5 text-right font-mono font-bold text-emerald-400">+{r.profit.toFixed(2)} €</td>
+                      <td className="p-3.5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setProfitRepair(r)}
+                          className="font-mono font-bold text-emerald-400 hover:text-emerald-300 flex items-center justify-end gap-1 ml-auto transition-colors"
+                          title="Ver desglose de rentabilidad y margen"
+                        >
+                          <span>+{r.profit.toFixed(2)} €</span>
+                          <span className="text-[10px] text-brand-green bg-brand-green/10 border border-brand-green/30 px-1.5 py-0.5 rounded-full font-normal">
+                            {r.profit_margin_pct ?? (r.price_total > 0 ? Math.round((r.profit / r.price_total) * 100) : 50)}%
+                          </span>
+                        </button>
+                      </td>
                       <td className="p-3.5">
                         <div className="flex items-center justify-center gap-1.5">
+                          {/* Diagnóstico */}
                           <button
+                            type="button"
+                            onClick={() => setDiagRepair(r)}
+                            className="p-1.5 rounded-lg bg-cyan-950/40 hover:bg-cyan-900/60 text-cyan-400 border border-cyan-500/30 transition-colors"
+                            title="Motor de Diagnóstico Estructurado"
+                          >
+                            <Activity className="w-3.5 h-3.5" />
+                          </button>
+                          {/* Check-in / Fotos / Firma */}
+                          <button
+                            type="button"
+                            onClick={() => setCheckinRepair(r)}
+                            className="p-1.5 rounded-lg bg-amber-950/40 hover:bg-amber-900/60 text-amber-400 border border-amber-500/30 transition-colors"
+                            title="Check-in Técnico, Fotos y Firma del Cliente"
+                          >
+                            <Smartphone className="w-3.5 h-3.5" />
+                          </button>
+                          {/* Historial IMEI */}
+                          <button
+                            type="button"
+                            onClick={() => setHistoryQuery(r.serial_imei || `${r.device_brand} ${r.device_model}`)}
+                            className="p-1.5 rounded-lg bg-brand-surface hover:bg-brand-elevated text-slate-300 hover:text-white border border-brand-border transition-colors"
+                            title="Historial de Reparaciones del Dispositivo"
+                          >
+                            <History className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => openRepairDetail(r)}
-                            className="p-1.5 rounded-lg bg-brand-surface hover:bg-brand-elevated text-slate-300 hover:text-white"
+                            className="p-1.5 rounded-lg bg-brand-surface hover:bg-brand-elevated text-slate-300 hover:text-white border border-brand-border transition-colors"
                             title="Editar ficha"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           <button
+                            type="button"
                             onClick={() => sendWhatsAppNotification(r)}
-                            className="p-1.5 rounded-lg bg-emerald-950/60 hover:bg-emerald-900 text-emerald-400"
+                            className="p-1.5 rounded-lg bg-emerald-950/60 hover:bg-emerald-900 text-emerald-400 border border-emerald-500/40 transition-colors"
                             title="Avisar por WhatsApp"
                           >
                             <MessageSquare className="w-3.5 h-3.5" />
@@ -376,6 +453,61 @@ export const AdminRepairsPage: React.FC = () => {
                   <p className="font-bold text-white text-sm">{selectedRepair.device_brand} {selectedRepair.device_model}</p>
                   <p className="text-slate-400 mt-0.5">Cat: {selectedRepair.device_category}</p>
                 </div>
+              </div>
+
+              {/* V1.5 Action Toolbar */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const r = selectedRepair;
+                    setIsModalOpen(false);
+                    setDiagRepair(r);
+                  }}
+                  className="p-3 rounded-xl bg-brand-surface hover:bg-brand-elevated border border-cyan-500/40 text-cyan-300 text-xs font-bold flex flex-col items-center gap-1.5 transition-all shadow-sm"
+                >
+                  <Activity className="w-5 h-5 text-cyan-400" />
+                  <span>Diagnóstico</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const r = selectedRepair;
+                    setIsModalOpen(false);
+                    setCheckinRepair(r);
+                  }}
+                  className="p-3 rounded-xl bg-brand-surface hover:bg-brand-elevated border border-amber-500/40 text-amber-300 text-xs font-bold flex flex-col items-center gap-1.5 transition-all shadow-sm"
+                >
+                  <Smartphone className="w-5 h-5 text-amber-400" />
+                  <span>Check-in & Firma</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const query = selectedRepair.serial_imei || `${selectedRepair.device_brand} ${selectedRepair.device_model}`;
+                    setIsModalOpen(false);
+                    setHistoryQuery(query);
+                  }}
+                  className="p-3 rounded-xl bg-brand-surface hover:bg-brand-elevated border border-brand-border text-slate-300 text-xs font-bold flex flex-col items-center gap-1.5 transition-all shadow-sm"
+                >
+                  <History className="w-5 h-5 text-brand-green" />
+                  <span>Historial IMEI</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const r = selectedRepair;
+                    setIsModalOpen(false);
+                    setProfitRepair(r);
+                  }}
+                  className="p-3 rounded-xl bg-brand-surface hover:bg-brand-elevated border border-emerald-500/40 text-emerald-300 text-xs font-bold flex flex-col items-center gap-1.5 transition-all shadow-sm"
+                >
+                  <TrendingUp className="w-5 h-5 text-emerald-400" />
+                  <span>Rentabilidad</span>
+                </button>
               </div>
 
               {/* Status Selector */}
@@ -592,6 +724,45 @@ export const AdminRepairsPage: React.FC = () => {
               </div>
             </form>
           </div>
+        )}
+
+        {/* V1.5 Sub-Modals */}
+        {diagRepair && (
+          <DiagnosticEngineModal
+            isOpen={!!diagRepair}
+            onClose={() => setDiagRepair(null)}
+            repair={diagRepair}
+            onSave={handleSaveDiagnostics}
+          />
+        )}
+
+        {checkinRepair && (
+          <DeviceCheckinModal
+            isOpen={!!checkinRepair}
+            onClose={() => setCheckinRepair(null)}
+            repair={checkinRepair}
+            onSave={handleSaveCheckin}
+            onOpenHistory={(imei) => {
+              setCheckinRepair(null);
+              setHistoryQuery(imei);
+            }}
+          />
+        )}
+
+        {historyQuery !== null && (
+          <DeviceHistoryModal
+            isOpen={historyQuery !== null}
+            onClose={() => setHistoryQuery(null)}
+            initialQuery={historyQuery}
+          />
+        )}
+
+        {profitRepair && (
+          <ProfitabilityModal
+            isOpen={!!profitRepair}
+            onClose={() => setProfitRepair(null)}
+            repair={profitRepair}
+          />
         )}
 
       </div>

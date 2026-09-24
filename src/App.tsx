@@ -29,6 +29,8 @@ import { AdminPricingCatalogPage } from './pages/admin/AdminPricingCatalogPage';
 import { AdminSettingsPage } from './pages/admin/AdminSettingsPage';
 import { AdminSecurityPage } from './pages/admin/AdminSecurityPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
+import { ModoMostradorPage } from './pages/admin/ModoMostradorPage';
+import { AdminAuditLogPage } from './pages/admin/AdminAuditLogPage';
 
 import { NotificationBanner } from './components/NotificationBanner';
 import { useRealtimeQuotes } from './hooks/useRealtimeQuotes';
@@ -72,6 +74,7 @@ export const App: React.FC = () => {
 
               {/* Admin Protected Routes */}
               <Route path="/admin" element={<AdminDashboardPage />} />
+              <Route path="/admin/mostrador" element={<ModoMostradorPage />} />
               <Route path="/admin/reparaciones" element={<AdminRepairsPage />} />
               <Route path="/admin/presupuestos" element={<AdminQuotesPage />} />
               <Route path="/admin/clientes" element={<AdminCustomersPage />} />
@@ -79,6 +82,7 @@ export const App: React.FC = () => {
               <Route path="/admin/proveedores" element={<AdminSuppliersPage />} />
               <Route path="/admin/precios" element={<AdminPricingCatalogPage />} />
               <Route path="/admin/usuarios" element={<AdminUsersPage />} />
+              <Route path="/admin/auditoria" element={<AdminAuditLogPage />} />
               <Route path="/admin/configuracion" element={<AdminSettingsPage />} />
               <Route path="/admin/seguridad" element={<AdminSecurityPage />} />
               <Route path="/admin/perfil" element={<AdminSecurityPage />} />

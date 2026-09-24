@@ -8,7 +8,10 @@ import {
   Supplier, 
   PricingCatalogItem, 
   CompanySettings, 
-  DashboardStats 
+  DashboardStats,
+  AuditLogEntry,
+  DeviceCheckinData,
+  DiagnosticItem
 } from '../types';
 import { 
   INITIAL_COMPANY_SETTINGS, 
@@ -30,8 +33,34 @@ const STORAGE_KEYS = {
   CUSTOMERS: 'cmfix_customers',
   QUOTES: 'cmfix_quotes',
   REPAIRS: 'cmfix_repairs',
-  SEQ: 'cmfix_counter'
+  SEQ: 'cmfix_counter',
+  AUDIT_LOGS: 'cmfix_audit_logs'
 };
+
+export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
+  {
+    id: 'audit-1',
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    user_name: 'Maury (Admin)',
+    user_role: 'ADMIN',
+    action: 'CHECKIN_COMPLETED',
+    entity_type: 'REPAIR',
+    entity_id: 'rep-init-1',
+    entity_code: 'CMF-2026-00001',
+    details: 'Recepción y resguardo de entrada con firma digital de cliente registrado.'
+  },
+  {
+    id: 'audit-2',
+    timestamp: new Date(Date.now() - 7200000).toISOString(),
+    user_name: 'Maury (Admin)',
+    user_role: 'ADMIN',
+    action: 'CREATE_QUOTE',
+    entity_type: 'QUOTE',
+    entity_id: 'q-init-1',
+    entity_code: 'CMF-2026-00002',
+    details: 'Presupuesto automático generado para pantalla iPhone 14 Pro.'
+  }
+];
 
 function getLocal<T>(key: string, fallback: T): T {
   try {
@@ -971,6 +1000,92 @@ export const dbService = {
       }
     }
     return updated;
+  },
+
+  // --- Check-in & Device Intake ---
+  async updateRepairCheckin(id: string, checkinData: DeviceCheckinData): Promise<Repair | null> {
+    const repairs = await this.getRepairs();
+    const index = repairs.findIndex(r => r.id === id || r.repair_number === id);
+    if (index === -1) return null;
+
+    const repair = repairs[index];
+    repair.checkin_data = { ...(repair.checkin_data || {}), ...checkinData };
+    if (checkinData.serial_imei) {
+      repair.serial_imei = checkinData.serial_imei;
+    }
+    if (checkinData.intake_photos && checkinData.intake_photos.length > 0) {
+      repair.photos = Array.from(new Set([...(repair.photos || []), ...checkinData.intake_photos]));
+    }
+    repairs[index] = repair;
+    setLocal(STORAGE_KEYS.REPAIRS, repairs);
+
+    await this.logAudit({
+      user_name: 'Maury (Admin)',
+      user_role: 'ADMIN',
+      action: 'CHECKIN_UPDATED',
+      entity_type: 'REPAIR',
+      entity_id: repair.id,
+      entity_code: repair.repair_number,
+      details: `Recepción técnica registrada. Accesorios: ${checkinData.accessories?.join(', ') || 'Ninguno'}. Firma: ${checkinData.client_signature ? 'Guardada' : 'Pendiente'}.`
+    });
+
+    return repair;
+  },
+
+  // --- Diagnostic Engine Checklist ---
+  async updateRepairDiagnostics(id: string, diagnostics: DiagnosticItem[]): Promise<Repair | null> {
+    const repairs = await this.getRepairs();
+    const index = repairs.findIndex(r => r.id === id || r.repair_number === id);
+    if (index === -1) return null;
+
+    const repair = repairs[index];
+    repair.diagnostic_checklist = diagnostics;
+    repairs[index] = repair;
+    setLocal(STORAGE_KEYS.REPAIRS, repairs);
+
+    const failCount = diagnostics.filter(d => d.status === 'FAIL').length;
+    await this.logAudit({
+      user_name: 'Maury (Admin)',
+      user_role: 'ADMIN',
+      action: 'DIAGNOSTIC_COMPLETED',
+      entity_type: 'REPAIR',
+      entity_id: repair.id,
+      entity_code: repair.repair_number,
+      details: `Diagnóstico realizado: ${diagnostics.length} comprobaciones (${failCount} fallos detectados).`
+    });
+
+    return repair;
+  },
+
+  // --- Device History Lookup ---
+  async getDeviceHistory(query: string): Promise<Repair[]> {
+    if (!query || !query.trim()) return [];
+    const clean = query.trim().toLowerCase();
+    const repairs = await this.getRepairs();
+    return repairs.filter(r => {
+      const imeiMatch = r.serial_imei && r.serial_imei.toLowerCase().includes(clean);
+      const repNumMatch = r.repair_number.toLowerCase().includes(clean);
+      const modelMatch = `${r.device_brand} ${r.device_model}`.toLowerCase().includes(clean);
+      const custMatch = r.customer?.name.toLowerCase().includes(clean) || (r.customer?.phone && r.customer.phone.includes(clean));
+      return imeiMatch || repNumMatch || (modelMatch && custMatch);
+    });
+  },
+
+  // --- Audit Logs ---
+  async getAuditLogs(): Promise<AuditLogEntry[]> {
+    return getLocal<AuditLogEntry[]>(STORAGE_KEYS.AUDIT_LOGS, INITIAL_AUDIT_LOGS);
+  },
+
+  async logAudit(entry: Omit<AuditLogEntry, 'id' | 'timestamp'>): Promise<AuditLogEntry> {
+    const newEntry: AuditLogEntry = {
+      id: 'audit-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      ...entry
+    };
+    const current = await this.getAuditLogs();
+    const updated = [newEntry, ...current].slice(0, 300);
+    setLocal(STORAGE_KEYS.AUDIT_LOGS, updated);
+    return newEntry;
   },
 
   // --- Inventory ---

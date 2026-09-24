@@ -1,4 +1,18 @@
-# Registro de Cambios - CM FIX V1
+# Registro de Cambios - CM FIX
+
+## CM FIX V1.5 — Actualización Mayor de Taller y Mostrador
+
+### Nuevas Funcionalidades
+- **Motor de Diagnóstico Estructurado (`DiagnosticEngineModal`)**: Checklist técnico interactivo con 16 puntos de inspección (Pantalla, Táctil, Batería, Carga, Cámaras, Sensores, Audio, Wi-Fi, Placa Base). Permite marcar `OK`, `FALLO` o `N/A`, calcular el índice de salud del equipo y almacenar notas técnicas específicas por componente.
+- **Presupuestos Manuales y Automáticos**: Selector en creación de presupuestos que permite alternar entre el cálculo automático con tarifas de catálogo o fijar importes manuales personalizados con desglose de IVA (21%) y mano de obra.
+- **Check-in del Dispositivo y Recepción Técnica (`DeviceCheckinModal`)**: Módulo de entrada que registra IMEI/Serie, código PIN o patrón de desbloqueo, porcentaje de batería al ingresar, accesorios dejados en custodia (cables, cargadores, fundas, SIM) y estado cosmético previo (rayones, golpes en chasis, daño por líquidos).
+- **Inspección con Fotografías**: Soporte para captura o carga de múltiples fotografías de entrada (frontal, trasera, esquinas y detalle de avería) para proteger al taller ante reclamaciones por desperfectos previos.
+- **Firma Digital del Cliente (`SignaturePadModal`)**: Lienzo táctil interactivo en HTML5 Canvas con soporte táctil y de ratón para formalizar la aceptación de condiciones de entrada y resguardo de entrega con marca de fecha y hora.
+- **Historial de Dispositivo por IMEI / Serie (`DeviceHistoryModal`)**: Buscador centralizado para consultar reparaciones previas, diagnósticos anteriores, piezas sustituidas y gasto acumulado de cualquier terminal en el taller.
+- **Registro de Auditoría y Trazabilidad (`AdminAuditLogPage`)**: Bitácora inmutable en `/admin/auditoria` que documenta qué usuario o técnico realizó cada acción (creación de orden, cambio de estado, modificación de precios, firmas o diagnósticos).
+- **Análisis de Rentabilidad y Margen (`ProfitabilityModal`)**: Cálculo de coste de repuestos frente a PVP, beneficio bruto neto y porcentaje de margen comercial con indicadores visuales por tramos de rentabilidad en el panel de reparaciones.
+- **Automatización de Estados**: Triggers automáticos; al cambiar una reparación a `LISTO PARA RECOGER`, el sistema lanza automáticamente el prompt para notificar al cliente vía WhatsApp con mensaje pre-redactado y enlace de seguimiento.
+- **Modo Mostrador Express (`ModoMostradorPage`)**: Nueva interfaz en `/admin/mostrador` pensada para tablets y terminales de mostrador de recepción en 4 pasos ultra-rápidos: búsqueda/alta de cliente, selección de equipo y avería, check-in con firma táctil, y emisión de resguardo o ticket en menos de 60 segundos.
 
 ## CM FIX V1 Stability Update
 

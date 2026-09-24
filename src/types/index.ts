@@ -79,6 +79,47 @@ export interface Quote {
   rejected_at?: string;
   valid_until: string;
   notes?: string;
+  pricing_mode?: 'AUTO' | 'MANUAL';
+  diagnostic_checklist?: DiagnosticItem[];
+}
+
+export interface DiagnosticItem {
+  id: string;
+  category: string;
+  label: string;
+  status: 'OK' | 'FAIL' | 'UNTESTED';
+  notes?: string;
+}
+
+export interface DeviceCheckinData {
+  serial_imei?: string;
+  passcode?: string;
+  battery_level?: number;
+  accessories?: string[];
+  cosmetic_condition?: {
+    screen_status?: 'INTACTO' | 'LEVE' | 'PROFUNDO' | 'ROTO';
+    back_cover?: 'INTACTO' | 'RAYADO' | 'ROTO';
+    chassis_dents?: boolean;
+    liquid_damage?: boolean;
+    notes?: string;
+  };
+  intake_photos?: string[];
+  client_signature?: string;
+  client_signature_date?: string;
+  delivery_signature?: string;
+  delivery_signature_date?: string;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  timestamp: string;
+  user_name: string;
+  user_role: string;
+  action: string;
+  entity_type: 'REPAIR' | 'QUOTE' | 'INVENTORY' | 'CUSTOMER' | 'SECURITY';
+  entity_id: string;
+  entity_code?: string;
+  details: string;
 }
 
 export interface RepairStatusHistory {
@@ -113,6 +154,7 @@ export interface Repair {
   cost_total: number;
   price_total: number;
   profit: number;
+  profit_margin_pct?: number;
   status: RepairStatus;
   entry_date: string;
   estimated_date?: string;
@@ -120,6 +162,8 @@ export interface Repair {
   notes_internal?: string;
   notes_public?: string;
   photos?: string[];
+  checkin_data?: DeviceCheckinData;
+  diagnostic_checklist?: DiagnosticItem[];
   status_history: RepairStatusHistory[];
 }
 
