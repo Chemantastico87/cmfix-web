@@ -157,11 +157,11 @@ export const AdminUsersPage: React.FC = () => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
-            {/* Ficha Técnico Creador */}
+            {/* Ficha Chema (Administrador Principal) */}
             <div className="bg-brand-carbon border-2 border-brand-green/60 rounded-2xl p-5 shadow-neon relative overflow-hidden">
               <div className="absolute top-0 right-0 bg-brand-green text-black font-black text-[10px] uppercase px-3 py-0.5 rounded-bl-xl flex items-center gap-1 shadow-sm">
                 <Crown className="w-3 h-3 fill-black" />
-                <span>Creador & Super Admin</span>
+                <span>Admin Principal</span>
               </div>
               <div className="flex items-start gap-3.5 mt-1">
                 <div className="w-12 h-12 rounded-xl bg-brand-green/20 border border-brand-green/40 flex items-center justify-center text-brand-green shrink-0">
@@ -169,16 +169,16 @@ export const AdminUsersPage: React.FC = () => {
                 </div>
                 <div className="space-y-1">
                   <h3 className="font-extrabold text-white text-base flex items-center gap-2">
-                    <span>Técnico Creador</span>
-                    {user?.isCreator && (
+                    <span>Chema</span>
+                    {(user?.isCreator || user?.name?.includes('Chema')) && (
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/40">
                         Tú (Sesión Activa)
                       </span>
                     )}
                   </h3>
-                  <p className="text-xs text-slate-300 font-mono">technico@cmfix.es / tecnico@cmfix.es</p>
+                  <p className="text-xs text-slate-300 font-mono">admin@cmfix.es / chema@cmfix.es</p>
                   <p className="text-[11px] text-slate-400">
-                    Control absoluto del sistema: altas de plantilla, configuración y panel de taller.
+                    Administrador general: control de sistema, auditoría, avisos y gestión de taller.
                   </p>
                 </div>
               </div>
@@ -188,7 +188,7 @@ export const AdminUsersPage: React.FC = () => {
             <div className="bg-brand-carbon border border-brand-border rounded-2xl p-5 shadow-card relative overflow-hidden">
               <div className="absolute top-0 right-0 bg-brand-surface border-l border-b border-brand-border text-slate-300 font-bold text-[10px] uppercase px-3 py-0.5 rounded-bl-xl flex items-center gap-1">
                 <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                <span>Administrador</span>
+                <span>Administrador Taller</span>
               </div>
               <div className="flex items-start gap-3.5 mt-1">
                 <div className="w-12 h-12 rounded-xl bg-brand-surface border border-brand-border flex items-center justify-center text-slate-300 shrink-0">
@@ -197,15 +197,15 @@ export const AdminUsersPage: React.FC = () => {
                 <div className="space-y-1">
                   <h3 className="font-extrabold text-white text-base flex items-center gap-2">
                     <span>Maury</span>
-                    {user?.email?.includes('gmail') && (
+                    {(user?.email?.includes('gmail') || user?.name?.includes('Maury')) && (
                       <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-500/40">
                         Tú (Sesión Activa)
                       </span>
                     )}
                   </h3>
-                  <p className="text-xs text-slate-300 font-mono">cmfixespana@gmail.com</p>
+                  <p className="text-xs text-slate-300 font-mono">cmfixespana@gmail.com / maury@cmfix.es</p>
                   <p className="text-[11px] text-slate-400">
-                    Administrador oficial del taller CM FIX con plenos derechos de gestión.
+                    Administrador oficial del taller CM FIX y atención técnica (+34 661 99 10 60).
                   </p>
                 </div>
               </div>

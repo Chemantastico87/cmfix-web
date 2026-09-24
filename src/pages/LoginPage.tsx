@@ -105,7 +105,7 @@ export const LoginPage: React.FC = () => {
                 type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="tecnico@cmfix.es o maury@cmfix.es"
+                placeholder="admin@cmfix.es o maury@cmfix.es"
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}

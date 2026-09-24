@@ -181,34 +181,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const customStore = getStoredPasswords();
       const normalizedUser = cleanUser.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-      // A) MAURY (ADMINISTRADOR)
-      const isMauryUser = 
-        cleanUser === 'maury@cmfix.es' || 
-        cleanUser === 'mauri@cmfix.es' || 
-        cleanUser === 'cmfixespana@gmail.com' || 
-        cleanUser === 'cmfix@gmail.com' || 
-        cleanUser === 'admin@cmfix.es' ||
-        cleanUser === 'maury' || 
-        cleanUser === 'mauri' ||
+      // A) CHEMA (ADMINISTRADOR / SUPER ADMIN)
+      const isChemaUser = 
+        cleanUser === 'chema@cmfix.es' || 
+        cleanUser === 'admin@cmfix.es' || 
+        cleanUser === 'chema' || 
         cleanUser === 'admin' ||
-        normalizedUser.includes('maury') ||
-        normalizedUser.includes('mauri');
+        cleanUser === 'tecnico@cmfix.es' ||
+        cleanUser === 'tecnico' ||
+        cleanUser === 'taller@cmfix.es' ||
+        normalizedUser.includes('chema');
 
       const currentAdminPass = customStore.admin?.password || DEFAULT_PASSWORDS.admin;
-      const isMauryPass = 
+      const isChemaPass = 
         cleanPass === currentAdminPass || 
-        cleanPass === 'MauryFix2026!' || 
-        cleanPass === 'MauriFix2026!' ||
+        cleanPass === 'ChemaFix2026!' || 
+        cleanPass === 'chema123' ||
         cleanPass === 'mauri123' || 
-        cleanPass === 'maury123';
+        cleanPass === 'maury123' ||
+        cleanPass === 'tecnico123';
 
-      if (isMauryUser && isMauryPass) {
+      if (isChemaUser && isChemaPass) {
         const adminUser: AuthUser = {
-          id: 'admin-maury',
-          email: 'cmfixespana@gmail.com',
-          name: 'Maury (Administrador)',
+          id: 'admin-chema',
+          email: 'admin@cmfix.es',
+          name: 'Chema (Administrador)',
           role: 'ADMIN',
-          isCreator: false
+          isCreator: true
         };
         setUser(adminUser);
         sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(adminUser));
@@ -217,39 +216,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: true };
       }
 
-      // B) TÉCNICO CREADOR / SUPER ADMIN (MISMOS DERECHOS + CREADOR DEL SISTEMA)
-      const isTecnicoUser = 
-        cleanUser === 'tecnico@cmfix.es' || 
-        cleanUser === 'technico@cmfix.es' || 
-        cleanUser === 'taller@cmfix.es' || 
-        cleanUser === 'tech@cmfix.es' ||
-        cleanUser === 'tecnico' ||
-        cleanUser === 'technico' ||
-        cleanUser === 'tech' ||
-        cleanUser === 'taller' ||
-        normalizedUser.includes('tecnic') ||
-        normalizedUser.includes('technic') ||
-        normalizedUser.includes('taller');
+      // B) MAURY (ADMINISTRADOR TALLER)
+      const isMauryUser = 
+        cleanUser === 'maury@cmfix.es' || 
+        cleanUser === 'mauri@cmfix.es' || 
+        cleanUser === 'cmfixespana@gmail.com' || 
+        cleanUser === 'cmfix@gmail.com' || 
+        cleanUser === 'maury' || 
+        cleanUser === 'mauri' ||
+        normalizedUser.includes('maury') ||
+        normalizedUser.includes('mauri');
 
-      const currentTecnicoPass = customStore.tecnico?.password || DEFAULT_PASSWORDS.tecnico;
-      const isTecnicoPass = 
-        cleanPass === currentTecnicoPass || 
-        cleanPass === 'TecnicoFix2026!' || 
-        cleanPass === 'TechnicoFix2026!' ||
-        cleanPass === 'tecnico123' || 
-        cleanPass === 'technico123';
+      const currentMauryPass = customStore.tecnico?.password || DEFAULT_PASSWORDS.tecnico;
+      const isMauryPass = 
+        cleanPass === currentMauryPass || 
+        cleanPass === 'MauryFix2026!' || 
+        cleanPass === 'MauriFix2026!' ||
+        cleanPass === 'mauri123' || 
+        cleanPass === 'maury123' ||
+        cleanPass === currentAdminPass;
 
-      if (isTecnicoUser && isTecnicoPass) {
-        const techUser: AuthUser = {
-          id: 'tech-cmfix',
-          email: 'tecnico@cmfix.es',
-          name: 'Técnico Creador (Super Admin)',
+      if (isMauryUser && isMauryPass) {
+        const mauryUser: AuthUser = {
+          id: 'admin-maury',
+          email: 'cmfixespana@gmail.com',
+          name: 'Maury (Administrador)',
           role: 'ADMIN',
-          isCreator: true
+          isCreator: false
         };
-        setUser(techUser);
-        sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(techUser));
-        localStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(techUser));
+        setUser(mauryUser);
+        sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(mauryUser));
+        localStorage.setItem(SESSION_AUTH_KEY, JSON.stringify(mauryUser));
         setLoading(false);
         return { success: true };
       }

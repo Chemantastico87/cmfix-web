@@ -31,6 +31,7 @@ import { DiagnosticEngineModal } from '../../components/DiagnosticEngineModal';
 import { DeviceCheckinModal } from '../../components/DeviceCheckinModal';
 import { DeviceHistoryModal } from '../../components/DeviceHistoryModal';
 import { ProfitabilityModal } from '../../components/ProfitabilityModal';
+import { getWhatsAppCustomerRepairUrl } from '../../services/notificationService';
 
 export const AdminRepairsPage: React.FC = () => {
   const [repairs, setRepairs] = useState<Repair[]>([]);
@@ -178,12 +179,9 @@ export const AdminRepairsPage: React.FC = () => {
     }
   };
 
-  const sendWhatsAppNotification = (repair: Repair) => {
-    const phone = repair.customer?.phone ? repair.customer.phone.replace(/\D/g, '') : '';
-    const text = encodeURIComponent(
-      `Hola ${repair.customer?.name || 'cliente'}, te informamos desde CM FIX que tu reparación ${repair.repair_number} (${repair.device_brand} ${repair.device_model}) se encuentra en estado: *${repair.status}*.\nPuedes seguirla en vivo aquí: ${window.location.origin}/seguimiento/${repair.repair_number}`
-    );
-    window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+  const sendWhatsAppNotification = (repair: Repair, customNote?: string) => {
+    const url = getWhatsAppCustomerRepairUrl(repair, customNote);
+    window.open(url, '_blank');
   };
 
   // Filtered repairs
@@ -589,11 +587,12 @@ export const AdminRepairsPage: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => sendWhatsAppNotification(selectedRepair)}
+                  onClick={() => sendWhatsAppNotification(selectedRepair, modalNotesPublic)}
                   className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all"
+                  title="Enviar estado actual y enlace de seguimiento al cliente por WhatsApp"
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
-                  <span>Avisar WhatsApp</span>
+                  <span>Avisar Cliente por WhatsApp</span>
                 </button>
               </div>
 

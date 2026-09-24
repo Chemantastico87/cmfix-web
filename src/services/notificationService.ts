@@ -1,6 +1,9 @@
-import { Quote } from '../types';
+import { Quote, Repair } from '../types';
 
 export interface NotificationSettings {
+  chemaName: string;
+  chemaPhone: string;
+  chemaEmail: string;
   mauryName: string;
   mauryPhone: string;
   mauryEmail: string;
@@ -27,7 +30,10 @@ const NOTIFICATIONS_HISTORY_KEY = 'cmfix_notification_history';
 const BROADCAST_CHANNEL_NAME = 'cmfix_notifications_channel';
 
 export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
-  mauryName: 'Maury (Administrador)',
+  chemaName: 'Chema (Administrador)',
+  chemaPhone: '+34 661 99 10 60',
+  chemaEmail: 'admin@cmfix.es',
+  mauryName: 'Maury (Administrador Taller)',
   mauryPhone: '+34 661 99 10 60',
   mauryEmail: 'cmfixespana@gmail.com',
   soundEnabled: true,
@@ -166,12 +172,15 @@ export function showSystemNotification(title: string, body: string, data?: any):
   }
 }
 
-// Generador de enlaces directos para avisar por WhatsApp a Maury (Taller CM FIX)
-export function getWhatsAppNotificationUrl(target: 'maury' | string = 'maury', quote: Quote): string {
+// Generador de enlaces directos para avisar por WhatsApp al taller (Maury o Chema)
+export function getWhatsAppNotificationUrl(target: 'maury' | 'chema' | string = 'maury', quote: Quote): string {
   const settings = getNotificationSettings();
-  let rawPhone = target === 'maury' 
-    ? settings.mauryPhone 
-    : target;
+  let rawPhone = settings.mauryPhone;
+  if (target === 'chema') {
+    rawPhone = settings.chemaPhone || settings.mauryPhone;
+  } else if (target !== 'maury') {
+    rawPhone = target;
+  }
 
   const cleanPhone = (rawPhone || '').replace(/\D+/g, '');
   const phoneToUse = cleanPhone.length === 9 ? `34${cleanPhone}` : cleanPhone;
@@ -194,6 +203,73 @@ export function getWhatsAppNotificationUrl(target: 'maury' | string = 'maury', q
     ``,
     `🌐 *Ver presupuesto completo en sistema:*`,
     quoteUrl
+  ].join('\n');
+
+  return `https://wa.me/${phoneToUse}?text=${encodeURIComponent(message)}`;
+}
+
+// Generador de enlace de WhatsApp para enviar el presupuesto directamente al CLIENTE desde el panel (Chema o Maury)
+export function getWhatsAppCustomerQuoteUrl(quote: Quote): string {
+  const rawPhone = quote.customer?.phone || '';
+  const cleanPhone = rawPhone.replace(/\D+/g, '');
+  const phoneToUse = cleanPhone.length === 9 ? `34${cleanPhone}` : cleanPhone;
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://cmfix.es';
+  const quoteUrl = `${origin}/presupuesto/${quote.id || quote.quote_number}`;
+
+  const message = [
+    `👋 Hola ${quote.customer?.name || 'estimado/a cliente'},`,
+    `Te enviamos tu presupuesto formal de *CM FIX* para la reparación de tu dispositivo:`,
+    ``,
+    `📄 *Nº Presupuesto:* ${quote.quote_number}`,
+    `📱 *Dispositivo:* ${quote.device_brand} ${quote.device_model}`,
+    `🔧 *Avería / Servicio:* ${quote.repair_type}`,
+    `💰 *Importe:* ${Number(quote.total || 0).toFixed(2)} € (IVA incluido)`,
+    `⏱️ *Plazo Estimado:* ${quote.estimated_time || '24-48 horas'}`,
+    ``,
+    `🔗 *Puedes revisar los detalles oficiales y aceptarlo online aquí:*`,
+    quoteUrl,
+    ``,
+    `Si tienes cualquier duda, estamos a tu disposición.`,
+    `— Equipo CM FIX`
+  ].join('\n');
+
+  return `https://wa.me/${phoneToUse}?text=${encodeURIComponent(message)}`;
+}
+
+// Generador de enlace de WhatsApp para enviar el estado de reparación al CLIENTE desde el panel (Chema o Maury)
+export function getWhatsAppCustomerRepairUrl(repair: Repair, customNote?: string): string {
+  const rawPhone = repair.customer?.phone || '';
+  const cleanPhone = rawPhone.replace(/\D+/g, '');
+  const phoneToUse = cleanPhone.length === 9 ? `34${cleanPhone}` : cleanPhone;
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://cmfix.es';
+  const trackingUrl = `${origin}/seguimiento/${repair.repair_number}`;
+
+  let emoji = '⚙️';
+  let statusHighlight = `*${repair.status}*`;
+  if (repair.status === 'LISTO PARA RECOGER') {
+    emoji = '📦🎉';
+    statusHighlight = `*¡LISTO PARA RECOGER EN TALLER!*`;
+  } else if (repair.status === 'REPARADO') {
+    emoji = '✅';
+  } else if (repair.status === 'DIAGNÓSTICO') {
+    emoji = '🔍';
+  }
+
+  const message = [
+    `${emoji} *ACTUALIZACIÓN DE REPARACIÓN CM FIX*`,
+    ``,
+    `Hola ${repair.customer?.name || 'estimado/a cliente'},`,
+    `Te informamos que tu orden *${repair.repair_number}* (${repair.device_brand} ${repair.device_model}) se encuentra en estado:`,
+    `👉 ${statusHighlight}`,
+    ...(customNote ? [``, `📝 *Nota del taller:* ${customNote}`] : []),
+    ...(repair.status === 'LISTO PARA RECOGER' ? [``, `📍 *Tu equipo ya está listo. Puedes pasar a recogerlo en nuestro horario habitual.*`] : []),
+    ``,
+    `🔍 *Puedes consultar el seguimiento técnico en vivo aquí:*`,
+    trackingUrl,
+    ``,
+    `¡Gracias por confiar en CM FIX!`
   ].join('\n');
 
   return `https://wa.me/${phoneToUse}?text=${encodeURIComponent(message)}`;

@@ -336,7 +336,7 @@ export const AdminSettingsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Section 4: Centro de Notificaciones Directas para Maury */}
+          {/* Section 4: Centro de Notificaciones Directas para Chema y Maury */}
           <div className="bg-brand-carbon border-2 border-brand-green/60 rounded-2xl p-6 shadow-neon-sm space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-border/60 pb-4">
               <div className="flex items-center gap-3">
@@ -345,13 +345,13 @@ export const AdminSettingsPage: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
-                    <span>Centro de Notificaciones Directas (Taller / Maury)</span>
+                    <span>Recepción de Notificaciones (Chema y Maury)</span>
                     <span className="px-2 py-0.5 rounded-full bg-brand-green/20 text-brand-green text-[10px] font-mono font-bold">
                       ACTIVO
                     </span>
                   </h2>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Al introducir un nuevo presupuesto online o en taller, sonará la campana acústica y se enviará el aviso a Maury por WhatsApp.
+                    Al solicitar un cliente un presupuesto online, suena la campana acústica y se crea la alerta en el panel de Chema y Maury. Desde aquí enviáis las notificaciones oficiales al cliente por WhatsApp.
                   </p>
                 </div>
               </div>
@@ -373,13 +373,49 @@ export const AdminSettingsPage: React.FC = () => {
               </div>
             )}
 
-            {/* Tarjeta de Maury */}
-            <div className="max-w-xl">
+            {/* Canales de Notificaciones: Chema y Maury */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Tarjeta de Chema */}
+              <div className="bg-brand-surface/70 border border-brand-green/40 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between pb-2 border-b border-brand-border/40">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-brand-green shadow-[0_0_8px_#22c55e]" />
+                    <span className="text-xs font-black text-white">Canal de Avisos: Chema (Admin)</span>
+                  </div>
+                  <span className="text-[10px] font-mono bg-emerald-950/80 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">
+                    Activo
+                  </span>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <label className="block text-slate-400 mb-1">Teléfono Móvil / WhatsApp de Chema:</label>
+                    <input
+                      type="text"
+                      value={notifSettings.chemaPhone || notifSettings.mauryPhone}
+                      onChange={(e) => setNotifSettings({ ...notifSettings, chemaPhone: e.target.value })}
+                      className="w-full bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-brand-green focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-400 mb-1">Correo Electrónico de Chema:</label>
+                    <input
+                      type="email"
+                      value={notifSettings.chemaEmail || 'admin@cmfix.es'}
+                      onChange={(e) => setNotifSettings({ ...notifSettings, chemaEmail: e.target.value })}
+                      className="w-full bg-brand-dark border border-brand-border rounded-lg px-3 py-2 text-white font-mono text-xs focus:border-brand-green focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Tarjeta de Maury */}
               <div className="bg-brand-surface/70 border border-emerald-500/40 rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-brand-border/40">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
-                    <span className="text-xs font-black text-white">Canal de WhatsApp y Avisos: Maury (Administrador)</span>
+                    <span className="text-xs font-black text-white">Canal de Avisos: Maury (Taller)</span>
                   </div>
                   <span className="text-[10px] font-mono bg-emerald-950/80 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">
                     Activo

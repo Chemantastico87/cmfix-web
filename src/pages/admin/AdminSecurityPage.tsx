@@ -115,7 +115,7 @@ export const AdminSecurityPage: React.FC = () => {
     try {
       const res = await changePassword(overrideTarget, '', overridePass, true);
       if (res.success) {
-        setOverrideSuccess(`¡Contraseña para ${overrideTarget === 'admin' ? 'Maury (Administrador)' : 'Técnico de Taller'} cambiada con éxito!`);
+        setOverrideSuccess(`¡Contraseña para ${overrideTarget === 'admin' ? 'Chema (Administrador Principal)' : 'Maury (Administrador Taller)'} cambiada con éxito!`);
         setOverridePass('');
         setOverrideConfirm('');
         setTimeout(() => {
@@ -133,8 +133,8 @@ export const AdminSecurityPage: React.FC = () => {
   };
 
   const handleReset = (target: 'admin' | 'tecnico') => {
-    const targetName = target === 'admin' ? 'Maury' : 'Técnico';
-    const defaultKey = target === 'admin' ? 'mauri123' : 'tecnico123';
+    const targetName = target === 'admin' ? 'Chema' : 'Maury';
+    const defaultKey = target === 'admin' ? 'chema123' : 'maury123';
     if (confirm(`¿Restablecer la contraseña de ${targetName} a la clave por defecto (${defaultKey})?`)) {
       resetToDefaultPassword(target);
       alert(`Contraseña de ${targetName} restablecida a "${defaultKey}".`);
@@ -299,7 +299,7 @@ export const AdminSecurityPage: React.FC = () => {
           <div className="border-b border-brand-border/60 pb-4">
             <h2 className="text-base font-bold text-white flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-brand-green" />
-              <span>Gestión de Cuentas del Taller (Maury y Técnico)</span>
+              <span>Gestión de Cuentas del Taller (Chema y Maury)</span>
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
               Ambos tenéis rango de administrador con plenos derechos para actualizar o recuperar el acceso de cualquiera de las dos cuentas.
@@ -308,16 +308,16 @@ export const AdminSecurityPage: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
-            {/* Account Card: Maury */}
-            <div className="p-5 rounded-xl bg-brand-dark/80 border border-brand-border space-y-3">
+            {/* Account Card: Chema */}
+            <div className="p-5 rounded-xl bg-brand-dark/80 border-2 border-brand-green/40 space-y-3 shadow-neon-sm">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-brand-green/20 border border-brand-green/40 flex items-center justify-center text-brand-green font-bold text-xs">
-                    M
+                    C
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white">Maury</h3>
-                    <span className="text-[10px] text-brand-green font-mono">Administrador</span>
+                    <h3 className="text-sm font-bold text-white">Chema</h3>
+                    <span className="text-[10px] text-brand-green font-mono">Administrador Principal</span>
                   </div>
                 </div>
                 <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950 text-emerald-300 border border-emerald-800">
@@ -326,7 +326,7 @@ export const AdminSecurityPage: React.FC = () => {
               </div>
 
               <div className="space-y-1 text-xs text-slate-300">
-                <p><span className="text-slate-500">Email:</span> cmfixespana@gmail.com / maury@cmfix.es</p>
+                <p><span className="text-slate-500">Email / Usuario:</span> admin@cmfix.es / chema@cmfix.es</p>
                 <p>
                   <span className="text-slate-500">Último cambio:</span>{' '}
                   <span className="font-mono text-slate-400">{passwordsInfo.adminUpdatedAt || 'Clave inicial oficial'}</span>
@@ -351,7 +351,7 @@ export const AdminSecurityPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleReset('admin')}
-                  title="Restablecer a contraseña por defecto (mauri123)"
+                  title="Restablecer a contraseña por defecto (chema123)"
                   className="p-2 rounded-lg bg-brand-surface hover:bg-brand-surface/80 border border-brand-border text-slate-400 hover:text-white transition-colors"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
@@ -359,25 +359,25 @@ export const AdminSecurityPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Account Card: Técnico */}
+            {/* Account Card: Maury */}
             <div className="p-5 rounded-xl bg-brand-dark/80 border border-brand-border space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 font-bold text-xs">
-                    T
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold text-xs">
+                    M
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white">Técnico de Taller</h3>
-                    <span className="text-[10px] text-cyan-400 font-mono">Administrador Técnico</span>
+                    <h3 className="text-sm font-bold text-white">Maury</h3>
+                    <span className="text-[10px] text-emerald-400 font-mono">Administrador Taller</span>
                   </div>
                 </div>
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-950 text-cyan-300 border border-cyan-800">
+                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950 text-emerald-300 border border-emerald-800">
                   Activo
                 </span>
               </div>
 
               <div className="space-y-1 text-xs text-slate-300">
-                <p><span className="text-slate-500">Email:</span> tecnico@cmfix.es</p>
+                <p><span className="text-slate-500">Email:</span> cmfixespana@gmail.com / maury@cmfix.es</p>
                 <p>
                   <span className="text-slate-500">Último cambio:</span>{' '}
                   <span className="font-mono text-slate-400">{passwordsInfo.tecnicoUpdatedAt || 'Clave inicial oficial'}</span>
@@ -402,7 +402,7 @@ export const AdminSecurityPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleReset('tecnico')}
-                  title="Restablecer a contraseña por defecto (tecnico123)"
+                  title="Restablecer a contraseña por defecto (maury123)"
                   className="p-2 rounded-lg bg-brand-surface hover:bg-brand-surface/80 border border-brand-border text-slate-400 hover:text-white transition-colors"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />

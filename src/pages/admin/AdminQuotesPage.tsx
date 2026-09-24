@@ -21,7 +21,7 @@ import { AdminLayout } from '../../components/AdminLayout';
 import { dbService } from '../../services/db';
 import { Quote, QuoteStatus, CompanySettings, PricingCatalogItem, DeviceCategory } from '../../types';
 import { generateQuotePDF } from '../../utils/pdfGenerator';
-import { getWhatsAppNotificationUrl } from '../../services/notificationService';
+import { getWhatsAppCustomerQuoteUrl, getWhatsAppNotificationUrl } from '../../services/notificationService';
 
 export const AdminQuotesPage: React.FC = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -315,11 +315,11 @@ export const AdminQuotesPage: React.FC = () => {
                           </button>
                         )}
                         <a
-                          href={getWhatsAppNotificationUrl('maury', q)}
+                          href={getWhatsAppCustomerQuoteUrl(q)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-1.5 rounded-lg bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-400 hover:text-emerald-200 border border-emerald-500/40 transition-colors"
-                          title="Avisar a Maury por WhatsApp (+34 661 99 10 60)"
+                          title={`Enviar Presupuesto al Cliente (${q.customer?.phone || 'Sin teléfono'}) por WhatsApp`}
                         >
                           <MessageCircle className="w-3.5 h-3.5" />
                         </a>

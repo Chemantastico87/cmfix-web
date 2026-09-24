@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   Wrench, 
@@ -13,31 +13,16 @@ import {
   Lock,
   LogOut,
   Sun,
-  Moon,
-  Bell
+  Moon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { getUnreadNotificationsCount } from '../services/notificationService';
-import { NotificationTray } from './NotificationTray';
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState<number>(getUnreadNotificationsCount());
   const location = useLocation();
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
-
-  useEffect(() => {
-    const handleUpdate = () => setUnreadCount(getUnreadNotificationsCount());
-    window.addEventListener('cmfix:notifications_updated', handleUpdate);
-    window.addEventListener('cmfix:new_quote', handleUpdate);
-    return () => {
-      window.removeEventListener('cmfix:notifications_updated', handleUpdate);
-      window.removeEventListener('cmfix:new_quote', handleUpdate);
-    };
-  }, []);
 
   const isActive = (path: string) => {
     if (path === '/' && location.pathname === '/') return true;
@@ -87,26 +72,6 @@ export const Navbar: React.FC = () => {
 
             {/* Desktop Action Buttons */}
             <div className="hidden md:flex items-center space-x-3">
-              {/* Notification Bell Button */}
-              <button
-                onClick={() => setNotifOpen(true)}
-                className={`relative p-2 rounded-lg border transition-all flex items-center justify-center ${
-                  unreadCount > 0 
-                    ? 'bg-brand-green/20 border-brand-green text-brand-green shadow-neon animate-pulse' 
-                    : 'bg-brand-surface/80 border-brand-border text-slate-300 hover:text-white hover:border-brand-green/40'
-                }`}
-                title="Avisos y Notificaciones de Presupuestos (Taller CM FIX)"
-                aria-label="Campana de notificaciones"
-              >
-                <Bell className="w-4 h-4" />
-                {unreadCount > 0 ? (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white font-mono text-[9px] font-black flex items-center justify-center animate-bounce shadow">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                ) : (
-                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-brand-green/60" />
-                )}
-              </button>
 
               <button
                 onClick={toggleTheme}
@@ -170,24 +135,6 @@ export const Navbar: React.FC = () => {
 
             {/* Mobile menu button & Mobile Bell */}
             <div className="flex md:hidden items-center space-x-2">
-              {/* Mobile Bell Button */}
-              <button
-                onClick={() => setNotifOpen(true)}
-                className={`relative p-2 rounded-lg border transition-all flex items-center justify-center ${
-                  unreadCount > 0 
-                    ? 'bg-brand-green/20 border-brand-green text-brand-green shadow-neon' 
-                    : 'bg-brand-surface border-brand-border text-slate-300'
-                }`}
-                title="Avisos y Notificaciones"
-                aria-label="Campana de notificaciones"
-              >
-                <Bell className="w-4 h-4" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white font-mono text-[9px] font-black flex items-center justify-center animate-pulse">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
 
               <button
                 onClick={toggleTheme}
@@ -237,25 +184,6 @@ export const Navbar: React.FC = () => {
               </Link>
             ))}
 
-            <div className="pt-2 border-t border-brand-border/40">
-              <button
-                onClick={() => {
-                  setIsOpen(false);
-                  setNotifOpen(true);
-                }}
-                className="flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-xs font-bold bg-brand-green/10 border border-brand-green/40 text-brand-green"
-              >
-                <div className="flex items-center gap-2">
-                  <Bell className="w-4 h-4" />
-                  <span>Notificaciones de Presupuestos</span>
-                </div>
-                {unreadCount > 0 && (
-                  <span className="px-2 py-0.5 rounded-full bg-red-500 text-white font-mono text-[10px]">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-            </div>
 
             <div className="pt-3 border-t border-brand-border/60 flex flex-col gap-2.5">
               <Link
@@ -304,8 +232,6 @@ export const Navbar: React.FC = () => {
         )}
       </header>
 
-      {/* Notification Drawer Modal */}
-      <NotificationTray isOpen={notifOpen} onClose={() => setNotifOpen(false)} />
     </>
   );
 };
