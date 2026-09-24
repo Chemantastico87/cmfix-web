@@ -1,5 +1,5 @@
-// CM FIX Service Worker - Versión 2.0 (Resistente a desincronizaciones y con bypass de API)
-const CACHE_NAME = 'cmfix-cache-v2.1';
+// CM FIX Service Worker - Versión 2.3 (Network-First para cambios instantáneos y bypass de API)
+const CACHE_NAME = 'cmfix-cache-v2.3';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -12,7 +12,7 @@ const STATIC_ASSETS = [
   '/CMfix.png'
 ];
 
-// Instalación: Pre-cache de archivos estáticos esenciales
+// Instalación: Pre-cache de archivos estáticos esenciales y activación inmediata
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -24,7 +24,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activación: Limpieza rigurosa de cachés antiguos (como cmfix-cache-v1)
+// Activación: Limpieza exhaustiva de cachés antiguos
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -40,7 +40,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Forzar actualización inmediata si el cliente lo solicita
+// Forzar activación inmediata al recibir mensaje
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
@@ -56,7 +56,7 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
 
   // 2. CRUCIAL: BYPASS TOTAL A SUPABASE Y APIS EXTERNAS
-  // Nunca guardar en caché llamadas a Supabase para evitar datos obsoletos o cambios no guardados
+  // Nunca guardar en caché llamadas a Supabase ni autenticación para garantizar datos en vivo
   if (
     url.hostname.includes('supabase.co') || 
     url.pathname.startsWith('/rest/v1') || 
@@ -66,10 +66,10 @@ self.addEventListener('fetch', (event) => {
     return; // Pasa directo a red sin tocar Service Worker
   }
 
-  // 3. NAVEGACIÓN (HTML Principal): ESTRATEGIA NETWORK-FIRST
-  // Siempre intentar obtener la última versión de la web desplegada.
-  // Si no hay conexión (offline), usar la copia en caché de index.html.
-  if (request.mode === 'navigate') {
+  // 3. ESTRATEGIA NETWORK-FIRST PARA TODOS LOS ARCHIVOS DEL ORIGEN
+  // Intenta siempre obtener la versión más reciente desplegada en el servidor.
+  // Si no hay conexión o falla la red, recurre a la copia en caché (soporte offline).
+  if (url.origin === self.location.origin) {
     event.respondWith(
       fetch(request)
         .then((networkResponse) => {
@@ -82,30 +82,14 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(() => {
-          return caches.match('/index.html') || caches.match('/');
-        })
-    );
-    return;
-  }
-
-  // 4. ASSETS ESTÁTICOS LOCALES (JS, CSS, IMÁGENES): STALE-WHILE-REVALIDATE CON BYPASS DE VERSIONES
-  if (url.origin === self.location.origin) {
-    event.respondWith(
-      caches.match(request).then((cachedResponse) => {
-        const fetchPromise = fetch(request)
-          .then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              const responseClone = networkResponse.clone();
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(request, responseClone);
-              });
+          return caches.match(request).then((cached) => {
+            if (cached) return cached;
+            if (request.mode === 'navigate') {
+              return caches.match('/index.html') || caches.match('/');
             }
-            return networkResponse;
-          })
-          .catch(() => cachedResponse);
-
-        return cachedResponse || fetchPromise;
-      })
+            return new Response('Sin conexión', { status: 503, statusText: 'Offline' });
+          });
+        })
     );
   }
 });

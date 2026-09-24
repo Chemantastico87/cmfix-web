@@ -38,11 +38,11 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Service Worker Registration for PWA con detección activa de actualizaciones
+      // Service Worker Registration for PWA con detección activa de actualizaciones y recarga automática
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js').then(reg => {
-            // Verificar actualizaciones inmediatamente
+            // Verificar actualizaciones inmediatamente al cargar
             reg.update();
 
             // Detectar si hay un nuevo worker esperando para activarlo
@@ -50,7 +50,7 @@
               const newWorker = reg.installing;
               if (newWorker) {
                 newWorker.addEventListener('statechange', () => {
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  if (newWorker.state === 'installed') {
                     newWorker.postMessage({ type: 'SKIP_WAITING' });
                   }
                 });
@@ -58,6 +58,15 @@
             });
           }).catch(err => {
             console.log('SW registration note:', err);
+          });
+
+          // Cuando el nuevo Service Worker toma el control, recargar suavemente para aplicar la nueva versión
+          let refreshing = false;
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!refreshing) {
+              refreshing = true;
+              window.location.reload();
+            }
           });
 
           // Re-comprobar actualizaciones al volver a enfocar la aplicación instalada
