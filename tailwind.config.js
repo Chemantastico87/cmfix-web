@@ -9,12 +9,12 @@ export default {
     extend: {
       colors: {
         brand: {
-          dark: '#070a08',
-          carbon: '#0c120e',
-          surface: '#121b15',
-          elevated: '#18241d',
-          border: '#1f3327',
-          'border-bright': '#2e4e3c',
+          dark: 'rgb(var(--brand-dark) / <alpha-value>)',
+          carbon: 'rgb(var(--brand-carbon) / <alpha-value>)',
+          surface: 'rgb(var(--brand-surface) / <alpha-value>)',
+          elevated: 'rgb(var(--brand-elevated) / <alpha-value>)',
+          border: 'rgb(var(--brand-border) / <alpha-value>)',
+          'border-bright': 'rgb(var(--brand-border-bright) / <alpha-value>)',
           green: {
             DEFAULT: '#22c55e',
             neon: '#38ef7d',
