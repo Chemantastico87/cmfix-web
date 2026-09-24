@@ -29,6 +29,7 @@ export const AdminQuotesPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [loading, setLoading] = useState(true);
+  const [convertingId, setConvertingId] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -51,15 +52,19 @@ export const AdminQuotesPage: React.FC = () => {
   }, []);
 
   const handleConvertQuoteToRepair = async (quote: Quote) => {
+    if (convertingId) return;
     if (!window.confirm(`¿Deseas convertir el presupuesto ${quote.quote_number} en una orden de reparación activa en taller?`)) {
       return;
     }
+    setConvertingId(quote.id);
     try {
       await dbService.updateQuoteStatus(quote.id, 'ACEPTADO');
       alert(`¡Presupuesto ${quote.quote_number} aceptado y orden de reparación creada con éxito!`);
-      loadData();
+      await loadData();
     } catch (err) {
       console.error('Error converting quote to repair:', err);
+    } finally {
+      setConvertingId(null);
     }
   };
 
@@ -232,11 +237,12 @@ export const AdminQuotesPage: React.FC = () => {
                         {q.status === 'PENDIENTE' && (
                           <button
                             onClick={() => handleConvertQuoteToRepair(q)}
-                            className="px-2 py-1 rounded-lg bg-brand-green hover:bg-brand-green-neon text-black font-bold text-[10px] flex items-center gap-1 shadow-sm transition-all"
+                            disabled={convertingId === q.id}
+                            className="px-2 py-1 rounded-lg bg-brand-green hover:bg-brand-green-neon text-black font-bold text-[10px] flex items-center gap-1 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Convertir directamente a reparación en taller"
                           >
                             <Wrench className="w-3 h-3" />
-                            <span>A Taller</span>
+                            <span>{convertingId === q.id ? 'Creando...' : 'A Taller'}</span>
                           </button>
                         )}
                         <a

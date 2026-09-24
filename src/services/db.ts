@@ -785,6 +785,15 @@ export const dbService = {
   },
 
   async createRepairFromQuote(quote: Quote): Promise<Repair> {
+    const existingRepairs = await this.getRepairs();
+    const existing = existingRepairs.find(r => 
+      (quote.id && r.quote_id === quote.id) || 
+      (quote.quote_number && r.repair_number === quote.quote_number)
+    );
+    if (existing) {
+      return existing;
+    }
+
     let repairId = 'rep-' + Date.now();
 
     if (isSupabaseConfigured && supabase) {
@@ -974,9 +983,13 @@ export const dbService = {
   },
 
   async addInventoryItem(item: Omit<InventoryItem, 'id'>): Promise<InventoryItem> {
+    const sanitizedStock = Math.max(0, Number(item.stock || 0));
+    const sanitizedMinStock = Math.max(0, Number(item.min_stock ?? 2));
     const newItem: InventoryItem = {
       id: 'inv-' + Date.now(),
-      ...item
+      ...item,
+      stock: sanitizedStock,
+      min_stock: sanitizedMinStock
     };
     const current = getLocal<InventoryItem[]>(STORAGE_KEYS.INVENTORY, INITIAL_INVENTORY);
     setLocal(STORAGE_KEYS.INVENTORY, [newItem, ...current]);
@@ -988,8 +1001,8 @@ export const dbService = {
           category: item.category,
           brand: (item as any).device_brand || (item as any).brand || null,
           model_compatibility: (item as any).device_model || (item as any).model_compatibility || null,
-          stock: item.stock || 0,
-          min_stock: item.min_stock || 2,
+          stock: sanitizedStock,
+          min_stock: sanitizedMinStock,
           cost_price: (item as any).cost || (item as any).cost_price || 0,
           sale_price: (item as any).price || (item as any).sale_price || 0,
           supplier_id: (item as any).supplier_id && /^[0-9a-f-]{36}$/i.test((item as any).supplier_id) ? (item as any).supplier_id : null,
@@ -1006,7 +1019,14 @@ export const dbService = {
     const current = getLocal<InventoryItem[]>(STORAGE_KEYS.INVENTORY, INITIAL_INVENTORY);
     const index = current.findIndex(i => i.id === id);
     if (index === -1) return null;
-    const updated = { ...current[index], ...data };
+    const sanitizedData = { ...data };
+    if (sanitizedData.stock !== undefined) {
+      sanitizedData.stock = Math.max(0, Number(sanitizedData.stock));
+    }
+    if (sanitizedData.min_stock !== undefined) {
+      sanitizedData.min_stock = Math.max(0, Number(sanitizedData.min_stock));
+    }
+    const updated = { ...current[index], ...sanitizedData };
     current[index] = updated;
     setLocal(STORAGE_KEYS.INVENTORY, current);
     if (isSupabaseConfigured && supabase) {
@@ -1018,8 +1038,8 @@ export const dbService = {
           };
           if (data.name !== undefined) sbPayload.name = data.name;
           if (data.category !== undefined) sbPayload.category = data.category;
-          if (data.stock !== undefined) sbPayload.stock = data.stock;
-          if (data.min_stock !== undefined) sbPayload.min_stock = data.min_stock;
+          if (sanitizedData.stock !== undefined) sbPayload.stock = sanitizedData.stock;
+          if (sanitizedData.min_stock !== undefined) sbPayload.min_stock = sanitizedData.min_stock;
           if ((data as any).device_brand !== undefined) sbPayload.brand = (data as any).device_brand;
           if ((data as any).device_model !== undefined) sbPayload.model_compatibility = (data as any).device_model;
           if ((data as any).cost !== undefined) sbPayload.cost_price = (data as any).cost;

@@ -101,10 +101,10 @@ export const AdminInventoryPage: React.FC = () => {
           device_model: deviceModel,
           supplier_id: supplierId,
           supplier_name: sup?.name,
-          cost: Number(cost),
-          price: Number(price),
-          stock: Number(stock),
-          min_stock: Number(minStock),
+          cost: Math.max(0, Number(cost)),
+          price: Math.max(0, Number(price)),
+          stock: Math.max(0, Number(stock)),
+          min_stock: Math.max(0, Number(minStock)),
           notes
         });
       } else {
@@ -116,10 +116,10 @@ export const AdminInventoryPage: React.FC = () => {
           device_model: deviceModel,
           supplier_id: supplierId,
           supplier_name: sup?.name,
-          cost: Number(cost),
-          price: Number(price),
-          stock: Number(stock),
-          min_stock: Number(minStock),
+          cost: Math.max(0, Number(cost)),
+          price: Math.max(0, Number(price)),
+          stock: Math.max(0, Number(stock)),
+          min_stock: Math.max(0, Number(minStock)),
           notes
         });
       }
